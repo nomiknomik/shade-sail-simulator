@@ -1,6 +1,6 @@
 # Developer Documentation — Shade Sail Simulator
 
-Technical reference for contributors and future development. Current version: **3.7**
+Technical reference for contributors and future development. Current version: **3.8**
 
 ## Architecture
 
@@ -20,6 +20,8 @@ index.html
     ├── Sail algorithm     (sailSurface, sailCorners — Horn quaternion best-fit)
     ├── Shadow rendering   (updateShadow — raycaster + DirectionalLight)
     ├── Daily analysis     (computeDayShade, renderDayShade — 10–18h, m²·h)
+    ├── Shadow clipping    (clipPolyToGarden — Sutherland-Hodgman, XZ plane)
+    ├── Day HUD            (renderDayHud — top-left overlay in 3D stage)
     ├── UI wiring          (wireStaticUI, buildPointEditors, buildSailEditors, ...)
     └── Mouse drag         (onPointerDown/Move/Up — sails + furniture)
 ```
@@ -137,9 +139,15 @@ Result is stored in `S.shadeAnalysis` and included in JSON export.
 - **Post labels:** `THREE.Sprite` with canvas-rendered text (13px, 96px wide); toggled via `showLabels`
 - **OrbitControls:** disabled during drag (`controls.enabled = false`)
 
+## Shadow Clipping Algorithm (v3.8)
+
+`clipPolyToGarden(pts)` clips the projected sail shadow polygon to the garden rectangle using
+Sutherland-Hodgman in the XZ plane. Called by both `updateShadow()` (live display) and
+`computeDayShade()` (daily analysis). Returns a list of `{x, z}` points forming the clipped polygon.
+
 ## Known Technical Debt
 
-- Shadow area not clipped to garden boundary (low sun elevations → inflated values)
+- Shadow area IS clipped to garden boundary since v3.8 (Sutherland-Hodgman polygon clipping)
 - Furniture shade test uses single center point per piece (not full geometry)
 - No triangle inequality check before fitting (degenerate sails render without warning)
 - Line count in this doc may drift; always check `wc -l index.html`
