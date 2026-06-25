@@ -1,25 +1,27 @@
 # Developer Documentation — Shade Sail Simulator
 
-Technical reference for contributors and future development.
+Technical reference for contributors and future development. Current version: **3.7**
 
 ## Architecture
 
-Single-file web application (`index.html`, ~700 lines). No build tools, no package manager, no server required.
+Single-file web application (`index.html`, ~966 lines). No build tools, no package manager, no server required.
 
 ```
 index.html
-├── <style>        CSS custom properties, layout
-├── <body>         HTML panel + 3D stage
+├── <style>        CSS custom properties, layout, dark theme
+├── <body>         HTML panel (left) + 3D canvas (right)
 ├── SunCalc CDN    Sun position calculations
 ├── importmap      Three.js module resolution
 └── <script type="module">
+    ├── i18n               (translations DE/EN/RU, setLang, t())
     ├── State management   (defaultState, loadState, saveState, migrate)
-    ├── Three.js scene     (renderer, camera, lights, groups)
-    ├── Geometry           (garden, posts, sails, furniture)
-    ├── Sail algorithm     (bestAngle2D, sailSurface, sailCorners)
-    ├── Shadow rendering   (updateShadow, raycaster)
-    ├── UI wiring          (wireStaticUI, buildPointEditors, ...)
-    └── Mouse drag         (onPointerDown/Move/Up)
+    ├── Three.js scene     (renderer, camera, lights, OrbitControls)
+    ├── Geometry builders  (buildGarden, buildPosts, buildSails, buildFurniture)
+    ├── Sail algorithm     (sailSurface, sailCorners — Horn quaternion best-fit)
+    ├── Shadow rendering   (updateShadow — raycaster + DirectionalLight)
+    ├── Daily analysis     (computeDayShade, renderDayShade — 10–18h, m²·h)
+    ├── UI wiring          (wireStaticUI, buildPointEditors, buildSailEditors, ...)
+    └── Mouse drag         (onPointerDown/Move/Up — sails + furniture)
 ```
 
 ## CDN Dependencies
@@ -36,100 +38,114 @@ All application state lives in the `S` object, persisted to `localStorage` under
 
 ```javascript
 S = {
-  garden:  { w, d, wallH, north },       // meters, degrees
-  loc:     { lat, lon },                  // decimal degrees
+  _pivotCorner: true,                       // furniture rotation mode flag
+  garden: {
+    w: 9.5,                                 // garden width (m)
+    d: 9.5,                                 // garden depth (m)
+    walls: { x0:3, xb:3, y0:3, yt:3 },    // individual wall heights (m); 0 = no wall
+    north: 229                              // north offset (degrees)
+  },
+  loc:     { lat: 48.4636, lon: 8.4111 }, // decimal degrees
   dateStr: "YYYY-MM-DD",
-  timeMin: 0–1439,                        // minutes since midnight
-  showLabels: boolean,
-  ref:     { corner: 0–3, ox, oy, oz },  // reference point
-  points:  [ { x, y, h } × 6 ],          // post positions (m), relative to ref
-  sails:   [ {
-    on, shape,                            // 3 or 4 corners
-    a, b, c,                              // triangle sides (m)
-    bw, bl,                               // rectangle width/length (m)
-    dx, dz,                               // mouse drag offset (m)
-    posts: [0–5 × shape],                 // post index per corner
-    color, opacity
-  } × 2 ],
+  timeMin: 0–1439,                          // minutes since midnight
+  showLabels: false,                        // toggle 3D post labels
+  ref: { corner:2, ox:0, oy:0, oz:0 },    // reference point (fixed, corner 3 = +X/+Y)
+  points: [                                 // 6 posts, relative to ref
+    { x, y, h },   // x/y in meters, h = absolute height above ground
+    ...
+  ],
+  sails: [
+    {
+      on: true,
+      shape: 3,                             // 3 = triangle, 4 = rectangle
+      a, b, c,                             // triangle sides (m)
+      bw, bl,                              // rectangle width/length (m)
+      dx: 0, dz: 0,                        // mouse drag offset (m)
+      posts: [0–5, ...],                   // post index per corner (length = shape)
+      color: "#c0392b",
+      opacity: 1
+    },
+    ...  // up to 2 sails
+  ],
   furniture: {
-    table:   { on, x, y, yaw, tw, tl, th },
+    table:   { on, x, y, yaw, tw, tl, th },          // yaw in degrees
     chair1:  { on, x, y, yaw },
     chair2:  { on, x, y, yaw },
-    pergola: { on, x, y, yaw, pw, pl, ph },
+    pergola: { on, x, y, yaw, pw, pl, ph },          // shadow-casting roof
   }
 }
 ```
 
 ## Coordinate System
 
-- **World space**: Three.js right-handed, Y-up. Garden center at origin.
-- **Garden corners**: Corner 0 = (−w/2, 0, −d/2), corner 1 = (+w/2, 0, −d/2), corner 2 = (+w/2, 0, +d/2), corner 3 = (−w/2, 0, +d/2).
-- **Reference point** (`refWorld()`): world position of the selected garden corner + offset.
-- **Post positions**: X/Y in `S.points` are offsets from the reference point. `poleTop(i)` returns the world position of post top.
-- **North rotation**: applied to sun direction and north arrow via `S.garden.north` degrees.
+- Origin: reference point (fixed at garden corner 3, +X/+Y direction)
+- X axis: positive toward high-X wall
+- Y axis: positive toward high-Y wall  
+- Z axis: height above ground (Three.js Y-up internally; external API uses X/Y/H)
+- North offset: rotates the entire scene; affects sun direction calculation
 
-## Sail Placement Algorithm
+## Sail Algorithm (Horn Quaternion Best-Fit)
 
-The sail has **fixed dimensions** (triangle sides or rectangle size). Its position and orientation in 3D are derived from the assigned posts.
+`sailSurface(sail)` determines sail position and orientation:
 
-### Step 1 — Horizontal orientation (`bestAngle2D`)
-Find the single rotation angle θ around the vertical axis that minimizes the angular error between each local corner direction and the corresponding post direction:
+1. Compute target positions: each corner's assigned post position
+2. Build the sail geometry in canonical form (flat in XZ plane)
+3. Apply Horn quaternion best-fit registration:
+   - Centers both point sets
+   - Computes cross-covariance matrix
+   - Extracts optimal rotation quaternion (minimizes RMS corner residuals)
+   - Translates to best-fit centroid
+4. Result: sail center + orientation quaternion → used by Three.js Mesh
 
+**Key invariant:** sail dimensions (a/b/c or bw/bl) are fixed. Only position and orientation are fitted.
+
+## i18n System
+
+```javascript
+const LANG = { de: { 'key': 'Text', ... }, en: { ... }, ru: { ... } };
+let currentLang = 'de';
+function t(key) { return (LANG[currentLang]||LANG.de)[key] || key; }
+function setLang(lang) { currentLang=lang; localStorage.setItem('shade-lang', lang); applyTranslations(); }
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  // dynamic readouts (ropes, shadows, dayshade) are re-rendered separately
+}
 ```
-maximize Σ (local_k · post_dir_k) over θ
-→ θ = atan2(Σ cross, Σ dot)
-```
 
-### Step 2 — Position clamping (`sailSurface`)
-The sail center starts at `G + (dx, dz)` (centroid of posts + mouse offset). If any corner falls outside the convex hull of the posts, the offset is binary-searched back until the sail is fully inside.
+HTML elements use `data-i18n="key"` attribute. Dynamic content (rope lengths, shadow areas, daily analysis) is re-rendered on language switch via `updateRopeReadouts()`, `updateShadow()`, `renderDayShade()`.
 
-### Step 3 — Height interpolation (`surfaceHeight`)
-Each corner's Y coordinate is interpolated from the post heights:
-- **3 posts**: barycentric interpolation in the triangle.
-- **4 posts**: bilinear interpolation (Newton iteration for UV coordinates), with triangle fallback.
+## Daily Shade Analysis
 
-### Step 4 — Rope lengths
-Rope length = Euclidean distance from sail corner (world position) to assigned post top. Displayed as read-only output.
+`computeDayShade()` iterates from 10:00 to 18:00 in 15-minute steps:
+- Computes sun position via SunCalc for each step
+- Projects sail geometry onto ground plane
+- Accumulates shadow area (m²) × time step (h) → result in m²·h
 
-## Shadow Calculation
+Result is stored in `S.shadeAnalysis` and included in JSON export.
 
-Shadow area uses geometric projection: each sail corner is projected onto Y=0 along `sunDir`. The shoelace formula gives the projected polygon area.
+## Migration
 
-Furniture shade detection fires a ray from the probe point upward along `sunDir` and checks intersection with sail meshes (and pergola roof).
+`migrate(state)` handles upgrades from older localStorage data:
+- `garden.wallH` (single value, pre-v3.6) → `garden.walls: { x0, xb, y0, yt }` (all set to former wallH value)
+- Reference point always forced to `corner:2, ox:0, oy:0, oz:0` (no longer user-configurable)
 
 ## UI Patterns
 
-- `link(card, cls, lo, hi, apply)` — wires a slider + number field pair inside a card element.
-- `linkId(slId, numId, lo, hi, apply)` — same for top-level elements with fixed IDs.
-- `bindNum(card, cls, lo, hi, apply)` — number-only input (no slider), used for sail dimensions.
-- `rowHTML(...)` — generates slider+number HTML string.
-- `numRowHTML(...)` — generates number-only row HTML string.
-- All sliders support double-click → reset to `data-default`.
+- **Bidirectional slider + number input:** `linkId(sliderId, numberId, min, max, callback)`
+- **Double-click reset:** panel `dblclick` handler checks `el.dataset.default`
+- **Furniture drag vs. sail drag:** distinguished by `drag.type` ('furn' | 'sail')
+- **Post labels:** `THREE.Sprite` with canvas-rendered text (13px, 96px wide); toggled via `showLabels`
+- **OrbitControls:** disabled during drag (`controls.enabled = false`)
 
-## Persistence
+## Known Technical Debt
 
-1. `localStorage.setItem('sonnensegel-v7', JSON.stringify(S))` — primary
-2. Cookie fallback (first 3900 chars) — for environments where localStorage is blocked
-
-The `migrate()` function handles upgrading old saved states to the current schema.
-
-## Three.js Groups
-
-| Group | Contents |
-|---|---|
-| `polesGroup` | Post cylinders + knobs |
-| `ropesGroup` | Rope lines (corner → post) |
-| `furnGroup` | Table, chairs, pergola meshes |
-| `shadowGroup` | Ground shadow polygon + outline |
-| `labelsGroup` | Sprite labels (shown when `showLabels` is true) |
-| `sailMeshes[0/1]` | The two sail meshes (added directly to scene) |
+- Shadow area not clipped to garden boundary (low sun elevations → inflated values)
+- Furniture shade test uses single center point per piece (not full geometry)
+- No triangle inequality check before fitting (degenerate sails render without warning)
+- Line count in this doc may drift; always check `wc -l index.html`
 
 ## Planned Features
 
-See [README.md](README.md#planned-features) for the user-facing roadmap.
-
-Technical notes on planned work:
-
-- **Sun hours analysis**: iterate over `timeMin` in steps, call `updateShadow()` logic without rendering, accumulate shaded minutes per furniture probe point.
-- **Post drag**: add post meshes to hit-test list in `onPointerDown`; update `S.points[i].x/y` on move.
-- **Triangle validation**: check `a + b > c` etc. before `sailLocalCorners()`; show warning in UI.
+1. **Draggable posts** — `onPointerDown` needs to detect post mesh and update `S.points[i].x/y`
+2. **Triangle validation** — check `a+b>c && b+c>a && a+c>b` before `sailSurface()`, show warning
+3. **Rope slack warning** — compare computed rope length vs. post distance
