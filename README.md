@@ -1,164 +1,164 @@
-# 🌞 Sonnensegel-Simulator
+# 🌞 Shade Sail Simulator
 
-Ein browserbasierter 3D-Simulator zur Planung von Sonnensegeln im Garten.
-Zeigt Schattenwurf, Segelausrichtung und Möbel-Beschattung zu jeder Tageszeit und Jahreszeit.
+A browser-based 3D simulator for planning shade sails in your garden.
+Visualizes shadow casting, sail orientation, and furniture shading at any time of day and season.
 
-**Keine Installation nötig** — `index.html` per Doppelklick in Chrome/Safari öffnen.
-Internetverbindung beim Öffnen nötig (CDN-Bibliotheken).
+**No installation required** — open `index.html` with a double-click in Chrome/Safari.
+Internet connection required on startup (CDN libraries).
 
-**Aktuelle Version: 3.6**
+**Current version: 3.6**
 
 ---
 
-## Schnellstart
+## Quick Start
 
 ```bash
-# Option A: direkt öffnen (Chrome empfohlen)
+# Option A: open directly (Chrome recommended)
 open index.html
 
-# Option B: lokaler Server (bei file://-Problemen in Safari)
+# Option B: local server (if Safari has file:// issues)
 python3 -m http.server 8080
 # → http://localhost:8080
 ```
 
 ---
 
-## Was der Simulator kann
+## Features
 
-### 🏡 Garten
-- Frei einstellbare Breite × Tiefe (Default: 9,5 × 9,5 m)
-- **Vier Wände mit je eigener Höhe** (0 m = keine Wand), jede wirft Schatten
-- Wandbenennung nach dem X/Y-Bezugspunkt: **X=0 / Y=0** = Wände an der Bezugsecke, **X=−B / Y=−T** die gegenüberliegenden
-- Nordrichtungs-Regler (der Garten kann beliebig zu Norden gedreht werden)
-- Standort einstellbar, plus **Ort-Auswahlliste** (Bad Säckingen, Freudenstadt, Karlsruhe, München, Baden-Baden) oder eigene Koordinaten
+### 🏡 Garden
+- Freely configurable width × depth (default: 9.5 × 9.5 m)
+- **Four walls with individual heights** (0 m = no wall), each casts shadows
+- Wall naming based on the X/Y reference point: **X=0 / Y=0** = walls at the reference corner, **X=−W / Y=−D** = opposite walls
+- North direction control (the garden can be rotated freely relative to north)
+- Configurable location, plus a **location preset list** (Bad Säckingen, Freudenstadt, Karlsruhe, Munich, Baden-Baden) or custom coordinates
 
-### 📍 Bezugspunkt
-- Fest auf **Ecke 3 (+X/+Y)**, Versatz 0/0/0 — Nullpunkt für alle X/Y-Eingaben (Pfosten, Möbel)
-- Wird als cyan-farbener Marker im 3D angezeigt
+### 📍 Reference Point
+- Fixed at **corner 3 (+X/+Y)**, offset 0/0/0 — origin for all X/Y inputs (posts, furniture)
+- Shown as a cyan marker in the 3D view
 
-### 🪵 6 Fixierungspfosten
-Jeder Pfosten hat eine eigene Farbe (rot, orange, gelb, grün, blau, violett) und wird über
-X / Y (relativ zum Bezugspunkt) + Höhe (absolut ab Boden) eingegeben.
-Optional: **Pfosten-Beschriftungen im 3D** (Nummer, X/Y, Höhe) per Checkbox ein-/ausblendbar.
+### 🪵 6 Mounting Posts
+Each post has its own color (red, orange, yellow, green, blue, violet) and is configured via
+X / Y (relative to reference point) + height (absolute from ground).
+Optional: **3D post labels** (number, X/Y, height) toggled via checkbox.
 
-### ⛵ Bis zu 2 Segel
-Jedes Segel ist unabhängig konfigurierbar:
+### ⛵ Up to 2 Sails
+Each sail is independently configurable:
 
-| Eigenschaft | Beschreibung |
+| Property | Description |
 |---|---|
-| **Form** | 3 Ecken (Dreieck: Seiten a/b/c) oder 4 Ecken (Breite × Länge) |
-| **Maße** | Feste Maße als Zahleneingabe |
-| **Lage** | Schwimmt in der von den Pfosten gebildeten Spannfläche; mit der Maus zwischen die Pfosten ziehen |
-| **Begrenzung** | Kann die Kontur zwischen den Pfosten (Dreieck/Viereck) nicht überschreiten |
-| **Höhe** | Folgt der Pfostenfläche — bei 4 Pfosten unterschiedlicher Höhe eine **gebogene Fläche (Hypar)** |
-| **Seillänge** | Kürzeste Verbindung Ecke→Pfosten, wird berechnet und angezeigt |
-| **Drehen** | ⟲/⟳-Buttons rotieren die Ecken-Pfosten-Zuordnung; „Mitte" zentriert wieder |
-| **Farbe/Deckkraft** | Frei einstellbar |
+| **Shape** | 3 corners (triangle: sides a/b/c) or 4 corners (rectangle: width × length) |
+| **Dimensions** | Fixed dimensions entered as numbers |
+| **Position** | Floats within the span surface defined by the posts; drag with mouse between posts |
+| **Boundary** | Cannot exceed the post outline (triangle/quadrilateral) |
+| **Height** | Follows the post surface — with 4 posts at different heights, a **curved surface (hypar)** |
+| **Rope length** | Shortest connection corner→post, calculated and displayed |
+| **Rotation** | ⟲/⟳ buttons rotate the corner-post assignment; "Center" recenters |
+| **Color/Opacity** | Freely adjustable |
 
-### ☀️ Sonne & Schatten
-- Sonnenstand aus echten astronomischen Daten (SunCalc)
-- Schattenwurf in Echtzeit auf Boden und Wände
-- Schattenfläche am Boden als dunkles Polygon + Flächenangabe in m² pro Segel
-- Möbel-Schattentest: zeigt an, ob Tisch/Stühle im Schatten oder in der Sonne sind (Pergola-Dach zählt als Schattenspender)
-- **Tag abspielen**: animiert den Schattenverlauf über 24 h · **Jetzt**: aktuelle Zeit/Datum
+### ☀️ Sun & Shadow
+- Sun position from real astronomical data (SunCalc)
+- Real-time shadow casting on ground and walls
+- Shadow area on the ground as a dark polygon + area in m² per sail
+- Furniture shade test: shows whether table/chairs are in shade or sun (pergola roof counts as shade source)
+- **Play day**: animates shadow progression over 24 h · **Now**: jumps to current time/date
 
-### 📊 Tagesauswertung (10–18 Uhr)
-- Über den Tag **integrierte Bodenschattenfläche** je aktivem Segel und gesamt, in **m²·h** (plus Ø in m²)
-- Trapezregel im 15-Minuten-Takt, abhängig vom eingestellten Datum
-- Wert steckt auch im JSON-Export (`shadeAnalysis`) → verschiedene Konfigurationen vergleichbar
-- Hinweis: „Gesamt" ist die Summe der Einzelsegel (Überlappungen werden doppelt gezählt)
+### 📊 Daily Shade Analysis (10–18 h)
+- **Integrated ground shadow area** per active sail and total over the day, in **m²·h** (plus average in m²)
+- Trapezoidal rule at 15-minute intervals, based on the selected date
+- Result is also included in the JSON export (`shadeAnalysis`) → allows comparison of different configurations
+- Note: "Total" is the sum of individual sails (overlaps are counted twice)
 
-### 🪑 Möbel
-- 1 Tisch (Breite/Länge/Höhe), 2 Stühle, 1 Pergola (Schutzdach auf 4 Beinen, wirft Schatten)
-- Alle Möbel: Position X/Y, Drehung, ein-/ausblendbar
-- **Im 3D mit der Maus verschiebbar**
-- **Tisch & Pergola drehen um eine Ecke** (Eck-Anker = Drehpunkt; X/Y bezeichnet diese Ecke). Stühle drehen um ihre Mitte.
-- Bei aktiver Beschriftung: Labels mit Position und Maßen auch für Tisch und Pergola
+### 🪑 Furniture
+- 1 table (width/length/height), 2 chairs, 1 pergola (shade roof on 4 legs, casts shadow)
+- All furniture: X/Y position, rotation, show/hide toggle
+- **Draggable in the 3D view with the mouse**
+- **Table & pergola rotate around a corner** (corner anchor = pivot point; X/Y refers to this corner). Chairs rotate around their center.
+- With labels enabled: labels showing position and dimensions for table and pergola
 
-### 💾 Datenverwaltung
-- **Auto-Speichern** nach jeder Änderung (localStorage + Cookie)
-- **Export** als `sonnensegel-setup_JJJJ-MM-TT_hhmm.json` (Dateiname mit Zeitstempel)
-- **Import** einer JSON-Datei (ältere Stände werden automatisch migriert)
-- **Reset** auf Standardwerte
-- **Doppelklick** auf einen Schieber → Standardwert; jeder Schieber hat ein Zahlenfeld daneben
+### 💾 Data Management
+- **Auto-save** after every change (localStorage + cookie)
+- **Export** as `sonnensegel-setup_YYYY-MM-DD_hhmm.json` (filename with timestamp)
+- **Import** a JSON file (older saves are automatically migrated)
+- **Reset** to defaults
+- **Double-click** on any slider → resets to default; every slider also has a number input field
 
 ---
 
-## Bedienung der 3D-Ansicht
+## 3D View Controls
 
-| Aktion | Geste |
+| Action | Gesture |
 |---|---|
-| Kamera drehen | Linke Maustaste + ziehen |
-| Zoomen | Mausrad |
-| Kamera verschieben | Rechte Maustaste + ziehen |
-| **Segel verschieben** | Linke Maustaste auf Segel + ziehen (bleibt in der Pfosten-Begrenzung) |
-| **Möbel verschieben** | Linke Maustaste auf Möbel + ziehen |
+| Rotate camera | Left mouse button + drag |
+| Zoom | Mouse wheel |
+| Pan camera | Right mouse button + drag |
+| **Move sail** | Left mouse button on sail + drag (stays within post boundary) |
+| **Move furniture** | Left mouse button on furniture + drag |
 
 ---
 
-## Technischer Stack
+## Tech Stack
 
-| Bibliothek | Version | Zweck |
+| Library | Version | Purpose |
 |---|---|---|
-| [Three.js](https://threejs.org) | 0.160 | 3D-Rendering, Schattenwurf (PCFSoft ShadowMap) |
-| [SunCalc](https://github.com/mourner/suncalc) | 1.9 | Sonnenstand (Azimut + Höhe) |
-| Vanilla JS | ES2022 | Keine Frameworks, kein Build-Tool |
+| [Three.js](https://threejs.org) | 0.160 | 3D rendering, shadow casting (PCFSoft ShadowMap) |
+| [SunCalc](https://github.com/mourner/suncalc) | 1.9 | Sun position (azimuth + altitude) |
+| Vanilla JS | ES2022 | No frameworks, no build tools |
 
-Beide Bibliotheken werden per CDN geladen (`unpkg.com`) — keine lokale Installation.
-
----
-
-## Projektstruktur
-
-```
-sonnensegel-simulator/
-├── index.html        ← komplette App (eine einzige Datei)
-├── README.md         ← diese Datei
-└── PROJEKTSTAND.md   ← technische Zusammenfassung für Weiterentwicklung
-```
+Both libraries are loaded via CDN (`unpkg.com`) — no local installation required.
 
 ---
 
-## Default-Werte (eigene Gartenmessung)
+## Project Structure
 
 ```
-Garten:      9,5 × 9,5 m, Wände je 3 m, Norden 229°
-Bezugspunkt: Ecke 3 (+X/+Y), kein Versatz
-Standort:    Freudenstadt (48,4636° N / 8,4111° O)
-
-Pfosten 1 (rot):    X=  0,0  Y=  0,0  H=2,9 m
-Pfosten 2 (orange): X= −7,0  Y=  0,0  H=3,0 m
-Pfosten 3 (gelb):   X= −9,5  Y=  0,0  H=3,0 m
-Pfosten 4 (grün):   X= −6,2  Y= −9,5  H=2,5 m
-Pfosten 5 (blau):   X=  0,0  Y= −9,5  H=2,5 m
-Pfosten 6 (violett):X=  2,5  Y=  7,5  H=3,0 m
-
-Segel 1 (rot):  Dreieck, Seiten 6,4 / 8,0 / 4,0 m, hängt an Pfosten 4–5–1
-Segel 2 (blau): aus (Dreieck 3/3/3 m als Vorlage)
+shade-sail-simulator/
+├── index.html        ← complete app (single file)
+├── README.md         ← this file
+└── PROJEKTSTAND.md   ← technical summary for continued development
 ```
 
 ---
 
-## Bekannte Einschränkungen
+## Default Values (from actual garden measurements)
 
-- Segel ist ein flaches bzw. (bei 4 Pfosten) bilinear gebogenes Panel — kein echter Katenar-Durchhang (bewusst so)
-- Feste Maße werden im **Grundriss** exakt gehalten; durch Höhenunterschiede sind die echten 3D-Kantenlängen minimal länger (wenige Prozent)
-- Schattenfläche wird nicht am Gartenrand abgeschnitten (bei flacher Sonne → sehr groß)
-- Möbel-Schattentest misst nur einen Punkt pro Objekt
-- Tagesauswertung „Gesamt" summiert die Einzelsegel (keine Vereinigung → Überlappung doppelt)
+```
+Garden:      9.5 × 9.5 m, walls 3 m each, north offset 229°
+Reference:   corner 3 (+X/+Y), no offset
+Location:    Freudenstadt (48.4636° N / 8.4111° E)
+
+Post 1 (red):    X=  0.0  Y=  0.0  H=2.9 m
+Post 2 (orange): X= −7.0  Y=  0.0  H=3.0 m
+Post 3 (yellow): X= −9.5  Y=  0.0  H=3.0 m
+Post 4 (green):  X= −6.2  Y= −9.5  H=2.5 m
+Post 5 (blue):   X=  0.0  Y= −9.5  H=2.5 m
+Post 6 (violet): X=  2.5  Y=  7.5  H=3.0 m
+
+Sail 1 (red):  Triangle, sides 6.4 / 8.0 / 4.0 m, attached to posts 4–5–1
+Sail 2 (blue): off (triangle 3/3/3 m as template)
+```
 
 ---
 
-## Geplante Erweiterungen
+## Known Limitations
 
-- [ ] **Sonnenstunden-Auswertung pro Sitzplatz** — von wann bis wann beschattet
-- [ ] **Pfosten per Maus ziehen** (analog zum Segel-/Möbel-Drag)
-- [ ] **Dreiecks-Validierung** — Warnung bei ungültigen Seitenmaßen
-- [ ] **Überlappungsfreie Gesamt-Schattenfläche** (Vereinigung per Raster)
-- [ ] Weitere Möbel / Hindernisse (Haus, Baum)
+- Sail is a flat or (with 4 posts) bilinearly curved panel — no true catenary sag (by design)
+- Fixed dimensions are exact in the **floor plan**; actual 3D edge lengths are slightly longer due to height differences (a few percent)
+- Shadow area is not clipped at the garden boundary (very large at low sun angles)
+- Furniture shade test measures only one point per object
+- Daily analysis "Total" sums individual sails (no union → overlaps counted twice)
 
 ---
 
-## Lizenz
+## Planned Features
 
-Privates Projekt. Kein öffentliches Release.
+- [ ] **Per-seat shade hours** — when and for how long each seat is in shade
+- [ ] **Drag posts with mouse** (like sail/furniture drag)
+- [ ] **Triangle validation** — warning for invalid side lengths
+- [ ] **Overlap-free total shadow area** (union via raster)
+- [ ] Additional furniture / obstacles (house, tree)
+
+---
+
+## License
+
+Private project. No public release.
