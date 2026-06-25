@@ -51,7 +51,7 @@
   <aside id="panel">
     <header>
       <h1>Sonnensegel-Simulator</h1>
-      <div class="ver">Version 3.3 · korrekte Aufspannung · Zahleneingabe</div>
+      <div class="ver">Version 3.6 · Wände einzeln · Eck-Drehpunkt · Ort-Liste · Tagesauswertung</div>
     </header>
 
     <div class="group">
@@ -61,7 +61,7 @@
         <button class="btn secondary" id="btnImport" style="flex:1">⬆ Import</button>
         <button class="btn secondary" id="btnReset" style="flex:0 0 64px">Reset</button>
       </div>
-      <p class="hint" id="saveState">Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Jeder Schieber ist auch als Zahl eingebbar.</p>
+      <p class="hint" id="saveState">Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Segel &amp; Möbel lassen sich im 3D mit der Maus verschieben.</p>
       <input id="fileImport" type="file" accept="application/json" hidden>
     </div>
 
@@ -69,27 +69,26 @@
       <h2>Garten</h2>
       <div class="row"><label>Breite</label><input id="gw" type="range" min="3" max="30" step="0.5"><input id="gwn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
       <div class="row"><label>Tiefe</label><input id="gd" type="range" min="3" max="30" step="0.5"><input id="gdn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
-      <div class="row"><label>Wandhöhe</label><input id="wh" type="range" min="0" max="4" step="0.1"><input id="whn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label>Wand X=0</label><input id="wx0" type="range" min="0" max="4" step="0.1"><input id="wx0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label>Wand X=−B</label><input id="wxb" type="range" min="0" max="4" step="0.1"><input id="wxbn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label>Wand Y=0</label><input id="wy0" type="range" min="0" max="4" step="0.1"><input id="wy0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label>Wand Y=−T</label><input id="wyt" type="range" min="0" max="4" step="0.1"><input id="wytn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
       <div class="row"><label>Norden °</label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="number" min="0" max="360" step="1"><span class="unit">°</span></div>
-    </div>
-
-    <div class="group">
-      <h2>Bezugspunkt</h2>
-      <p class="hint">Nullpunkt für alle X/Y-Eingaben (Pfosten &amp; Möbel), gemessen ab einer Gartenecke. Die Höhe Z zählt nur für die Laser-Messung.</p>
-      <div class="row"><label>Ecke</label>
-        <select id="refCorner">
-          <option value="0">Ecke 1 (−X/−Y)</option><option value="1">Ecke 2 (+X/−Y)</option>
-          <option value="2">Ecke 3 (+X/+Y)</option><option value="3">Ecke 4 (−X/+Y)</option>
-        </select>
-      </div>
-      <div class="row"><label>Versatz X</label><input id="rox" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <div class="row"><label>Versatz Y</label><input id="roy" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <div class="row"><label>Höhe Z</label><input id="roz" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <p class="hint" id="refWorld"></p>
+      <p class="hint" style="margin-top:8px">Vier Wände einzeln einstellbar (0 m = keine Wand). Seiten benannt nach dem X/Y-Bezugspunkt: <b>X=0 / Y=0</b> = die Wände an der Bezugsecke, <b>X=−B / Y=−T</b> die gegenüberliegenden. Bezugspunkt fest auf <b>Ecke 3 (+X/+Y)</b>.</p>
     </div>
 
     <div class="group">
       <h2>Standort &amp; Zeit</h2>
+      <div class="row"><label>Ort</label>
+        <select id="city">
+          <option value="manual">— eigene Koordinaten —</option>
+          <option value="47.5536,7.9447">Bad Säckingen</option>
+          <option value="48.4636,8.4111">Freudenstadt</option>
+          <option value="49.0069,8.4037">Karlsruhe</option>
+          <option value="48.1351,11.5820">München</option>
+          <option value="48.7606,8.2398">Baden-Baden</option>
+        </select>
+      </div>
       <div class="row"><label>Breitengrad</label><input id="lat" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
       <div class="row"><label>Längengrad</label><input id="lon" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
       <div class="row"><label>Datum</label><input id="date" type="date"></div>
@@ -102,18 +101,20 @@
 
     <div class="group">
       <h2>Pfosten</h2>
-      <p class="hint">6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut – oder Laser (Entfernung + Winkel).</p>
+      <p class="hint">6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut ab Boden.</p>
+      <div class="row"><label>Beschriftung</label><input id="showLabels" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)">Labels &amp; Maße im 3D anzeigen</span></div>
       <div id="points"></div>
     </div>
 
     <div class="group">
       <h2>Segel</h2>
-      <p class="hint">Feste Größe je Segel. Die Lage wird aus den Pfosten berechnet (gespannte Seile, jede Ecke zeigt zu ihrem Pfosten). Im 3D mit der Maus verschieben; ⟲/⟳ dreht die Aufhängung.</p>
+      <p class="hint">Feste Maße je Segel (als Zahl eingeben). Im 3D mit der Maus zwischen die Pfosten ziehen – das Segel bleibt innerhalb der Pfosten-Begrenzung. Höhe folgt der Pfostenfläche (bei 4 Pfosten gebogen). Seile = kürzeste Verbindung Ecke→Pfosten. ⟲/⟳ dreht die Aufhängung.</p>
       <div id="sails"></div>
     </div>
 
     <div class="group">
       <h2>Möbel</h2>
+      <p class="hint">Im 3D mit der Maus in der Ebene verschiebbar.</p>
       <div id="furniture"></div>
     </div>
 
@@ -121,6 +122,11 @@
       <h2>Schatten</h2>
       <div class="row"><label>Fläche zeigen</label><input id="showShadow" type="checkbox" checked style="accent-color:var(--sun)"></div>
       <div class="readout" id="shadowReadout"></div>
+    </div>
+    <div class="group">
+      <h2>Tagesauswertung</h2>
+      <p class="hint">Über den Tag (10–18 Uhr) integrierte Bodenschattenfläche je aktivem Segel und gesamt – in m²·h (Quadratmeter × Stunden). Steckt auch im JSON-Export zum Vergleich von Konfigurationen.</p>
+      <div class="readout" id="dayShade"></div>
     </div>
     <div class="group"><h2>Sonne</h2><div class="readout" id="sunReadout"></div></div>
     <div class="group"><h2>Legende</h2>
@@ -141,34 +147,75 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const DEG=Math.PI/180;
 const STORE_KEY='sonnensegel-v7';
 const POST_HEX=['#e74c3c','#f39c12','#f1c40f','#2ecc71','#3498db','#9b59b6'];
+const num=(v,def)=>{ v=+v; return isNaN(v)?def:v; };
 
 function defaultState(){
   return {
-    garden:{ w:9.5, d:9.5, wallH:3, north:229 },
+    _pivotCorner:true,
+    garden:{ w:9.5, d:9.5, walls:{ x0:3, xb:3, y0:3, yt:3 }, north:229 },
     loc:{ lat:48.4636, lon:8.4111 },
     dateStr:new Date().toISOString().slice(0,10),
     timeMin:1092,
-    ref:{ corner:2, ox:0, oy:0, oz:0 },
+    showLabels:false,
+    ref:{ corner:2, ox:0, oy:0, oz:0 },   // fix: Ecke 3 (+X/+Y), kein Versatz
     points:[
-      { mode:'xyz', x:0,    y:0,    h:2.9, dist:4, ha:0,   va:30 },
-      { mode:'xyz', x:-7,   y:0,    h:3,   dist:4, ha:30,  va:30 },
-      { mode:'xyz', x:-9.5, y:0,    h:3,   dist:4, ha:60,  va:30 },
-      { mode:'xyz', x:-6.2, y:-9.5, h:2.5, dist:4, ha:120, va:30 },
-      { mode:'xyz', x:0,    y:-9.5, h:2.5, dist:4, ha:150, va:30 },
-      { mode:'xyz', x:2.5,  y:7.5,  h:3,   dist:4, ha:180, va:30 },
+      { x:0,    y:0,    h:2.9 },
+      { x:-7,   y:0,    h:3   },
+      { x:-9.5, y:0,    h:3   },
+      { x:-6.2, y:-9.5, h:2.5 },
+      { x:0,    y:-9.5, h:2.5 },
+      { x:2.5,  y:7.5,  h:3   },
     ],
     sails:[
       { on:true,  shape:3, bw:5.8, bl:3.6, a:6.4, b:8, c:4, dx:0, dz:0, posts:[3,4,0], color:'#c0392b', opacity:1 },
       { on:false, shape:3, bw:3,   bl:3,   a:3,   b:3, c:3, dx:0, dz:0, posts:[1,3,4], color:'#2c6fbb', opacity:1 },
     ],
     furniture:{
-      table:  { on:true, x:-4.75, y:-4.75, yaw:0, tw:1.1, tl:0.7, th:0.74 },
+      table:  { on:true, x:-5.3,  y:-5.1, yaw:0, tw:1.1, tl:0.7, th:0.74 },  // x/y = Eck-Anker (Drehpunkt)
       chair1: { on:true, x:-5.65, y:-4.75, yaw:90 },
       chair2: { on:true, x:-3.85, y:-4.75, yaw:-90 },
+      pergola:{ on:true, x:-3.5,  y:-3.5, yaw:0, pw:3, pl:3, ph:2.2 },        // x/y = Eck-Anker (Drehpunkt)
     },
   };
 }
-let S=loadState()||defaultState();
+
+// Alte Speicherstände auf das neue Schema bringen
+function migrate(st){
+  if(!st) return null;
+  const d=defaultState();
+  const hadWalls = st.garden && st.garden.walls && typeof st.garden.walls==='object';
+  const legacyWallH = (st.garden && typeof st.garden.wallH==='number') ? st.garden.wallH : null;
+  st.garden=Object.assign({},d.garden,st.garden||{});
+  // 4 getrennte Wandhöhen; alte einzelne wallH auf alle vier übernehmen
+  if(!hadWalls){
+    const wh=(legacyWallH!=null)?legacyWallH:3;
+    st.garden.walls={ x0:wh, xb:wh, y0:wh, yt:wh };
+  } else {
+    st.garden.walls=Object.assign({},d.garden.walls,st.garden.walls);
+  }
+  delete st.garden.wallH;
+  st.loc=Object.assign({},d.loc,st.loc||{});
+  st.ref={ corner:2, ox:0, oy:0, oz:0 };
+  if(!st.dateStr) st.dateStr=d.dateStr;
+  if(typeof st.timeMin!=='number') st.timeMin=d.timeMin;
+  if(typeof st.showLabels!=='boolean') st.showLabels=false;
+  if(!Array.isArray(st.points)||st.points.length<6) st.points=d.points;
+  st.points=st.points.map((p,i)=>({ x:num(p&&p.x, d.points[i].x), y:num(p&&p.y, d.points[i].y), h:num(p&&p.h, d.points[i].h) }));
+  if(!Array.isArray(st.sails)) st.sails=d.sails;
+  st.sails=st.sails.map((s,i)=>Object.assign({}, d.sails[i]||d.sails[0], s||{}));
+  st.furniture=Object.assign({},d.furniture,st.furniture||{});
+  ['table','chair1','chair2','pergola'].forEach(k=>{ st.furniture[k]=Object.assign({},d.furniture[k],st.furniture[k]||{}); });
+  // Einmalig: Tisch/Pergola von Mitten- auf Eck-Anker umstellen (Position bleibt optisch gleich)
+  if(!st._pivotCorner){
+    const t=st.furniture.table, pg=st.furniture.pergola;
+    if(t){ t.x-=(t.tw||1.1)/2; t.y-=(t.tl||0.7)/2; }
+    if(pg){ pg.x-=(pg.pw||3)/2; pg.y-=(pg.pl||3)/2; }
+    st._pivotCorner=true;
+  }
+  return st;
+}
+
+let S=migrate(loadState())||defaultState();
 const DEF=defaultState();
 
 /* ---- Three.js ---- */
@@ -185,6 +232,7 @@ const polesGroup=new THREE.Group(); scene.add(polesGroup);
 const ropesGroup=new THREE.Group(); scene.add(ropesGroup);
 const furnGroup=new THREE.Group(); scene.add(furnGroup);
 const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
+const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
 const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),new THREE.Vector3(0,0.02,0),4,0xf4a93c,0.9,0.5); scene.add(northArrow);
 const refMarker=new THREE.Group();
 const refPin=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6,8),new THREE.MeshStandardMaterial({color:0x22c3d6})); refPin.position.y=0.3;
@@ -192,17 +240,13 @@ const refBall=new THREE.Mesh(new THREE.SphereGeometry(0.12,16,12),new THREE.Mesh
 refMarker.add(refPin,refBall); scene.add(refMarker);
 const sailMeshes=[0,1].map(()=>{ const m=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({roughness:0.85,side:THREE.DoubleSide,transparent:true})); m.castShadow=true; scene.add(m); return m; });
 let sunDir=new THREE.Vector3(0,1,0);
+let pergolaRoof=null;
 const raycaster=new THREE.Raycaster();
 
 /* ---- Geometrie ---- */
 function gardenCorners(){ const {w,d}=S.garden; return [new THREE.Vector3(-w/2,0,-d/2),new THREE.Vector3(w/2,0,-d/2),new THREE.Vector3(w/2,0,d/2),new THREE.Vector3(-w/2,0,d/2)]; }
 function refWorld(){ const c=gardenCorners()[S.ref.corner]; return new THREE.Vector3(c.x+S.ref.ox,S.ref.oz,c.z+S.ref.oy); }
-function poleTop(i){
-  const p=S.points[i];
-  if(p.mode==='polar'){ const B=refWorld(); const ha=p.ha*DEG,va=p.va*DEG;
-    const dir=new THREE.Vector3(Math.cos(va)*Math.cos(ha),Math.sin(va),Math.cos(va)*Math.sin(ha)); return B.clone().add(dir.multiplyScalar(p.dist)); }
-  const B=refWorld(); return new THREE.Vector3(B.x+p.x,p.h,B.z+p.y);
-}
+function poleTop(i){ const p=S.points[i]; const B=refWorld(); return new THREE.Vector3(B.x+p.x,p.h,B.z+p.y); }
 function sailLocalCorners(s){
   if(s.shape===3){
     const a=s.a,b=s.b,c=s.c; const Cx=(b*b-a*a+c*c)/(2*c); const Cz=Math.sqrt(Math.max(0,b*b-Cx*Cx));
@@ -212,39 +256,67 @@ function sailLocalCorners(s){
   const w=s.bw,l=s.bl;
   return [ new THREE.Vector3(-w/2,0,-l/2),new THREE.Vector3(w/2,0,-l/2),new THREE.Vector3(w/2,0,l/2),new THREE.Vector3(-w/2,0,l/2) ];
 }
-// optimale Rotation (Horn-Quaternion) von P nach Q
-function bestRotationQuat(P,Q){
-  let Sxx=0,Sxy=0,Sxz=0,Syx=0,Syy=0,Syz=0,Szx=0,Szy=0,Szz=0;
-  for(let i=0;i<P.length;i++){ const p=P[i],q=Q[i];
-    Sxx+=p.x*q.x;Sxy+=p.x*q.y;Sxz+=p.x*q.z; Syx+=p.y*q.x;Syy+=p.y*q.y;Syz+=p.y*q.z; Szx+=p.z*q.x;Szy+=p.z*q.y;Szz+=p.z*q.z; }
-  const N=[
-    [Sxx+Syy+Szz,Syz-Szy,Szx-Sxz,Sxy-Syx],
-    [Syz-Szy,Sxx-Syy-Szz,Sxy+Syx,Szx+Sxz],
-    [Szx-Sxz,Sxy+Syx,-Sxx+Syy-Szz,Syz+Szy],
-    [Sxy-Syx,Szx+Sxz,Syz+Szy,-Sxx-Syy+Szz]];
-  let maxabs=0; for(const r of N) for(const val of r) maxabs=Math.max(maxabs,Math.abs(val));
-  const k=10*(maxabs+1); for(let i=0;i<4;i++) N[i][i]+=k;
-  let v=[1,0.2,0.1,0.05];
-  for(let it=0;it<150;it++){ const w=[0,0,0,0]; for(let i=0;i<4;i++){ let su=0; for(let j=0;j<4;j++) su+=N[i][j]*v[j]; w[i]=su; } const nn=Math.hypot(w[0],w[1],w[2],w[3])||1; v=w.map(x=>x/nn); }
-  return new THREE.Quaternion(v[1],v[2],v[3],v[0]).normalize();
+/* Das Segel schwimmt in der von den Pfosten gebildeten Spannfläche.
+   - feste Maße (Footprint), Ausrichtung als Best-Fit zu den Pfosten-Richtungen
+   - Position frei per Maus, bleibt aber innerhalb der Pfosten-Begrenzung
+   - jede Eckenhöhe folgt der Pfostenfläche (bei 4 Pfosten = gebogene Fläche / Hypar)
+   - Seile = kürzeste gerade Verbindung Ecke→Pfosten (berechnete Ausgabe) */
+// Punkt in (einfachem) Polygon, XZ-Ebene
+function pointInPoly(p,poly){ let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i],b=poly[j];
+    if(((a.z>p.z)!==(b.z>p.z)) && (p.x<(b.x-a.x)*(p.z-a.z)/((b.z-a.z)||1e-9)+a.x)) inside=!inside; }
+  return inside; }
+// beste 2D-Drehung (um die Hochachse), damit Ecke k Richtung Pfosten k zeigt
+function bestAngle2D(local,pg,G){ let sx=0,sc=0;
+  for(let k=0;k<local.length;k++){ const a=local[k],b={x:pg[k].x-G.x,z:pg[k].z-G.z};
+    sc+=a.x*b.x+a.z*b.z; sx+=a.x*b.z-a.z*b.x; }
+  return Math.atan2(sx,sc); }
+// Höhe eines Punktes innerhalb eines Dreiecks (baryzentrisch)
+function triHeight(p,A,B,C){ const d=((B.z-C.z)*(A.x-C.x)+(C.x-B.x)*(A.z-C.z))||1e-9;
+  const w0=((B.z-C.z)*(p.x-C.x)+(C.x-B.x)*(p.z-C.z))/d;
+  const w1=((C.z-A.z)*(p.x-C.x)+(A.x-C.x)*(p.z-C.z))/d; const w2=1-w0-w1;
+  return {h:w0*A.y+w1*B.y+w2*C.y, wmin:Math.min(w0,w1,w2)}; }
+// Höhe der Pfostenfläche an Stelle p (3 Pfosten = Ebene, 4 Pfosten = bilineare/gebogene Fläche)
+function surfaceHeight(pg,ys,p,shape){
+  const P=pg.map((g,k)=>({x:g.x,z:g.z,y:ys[k]}));
+  if(shape===3) return triHeight(p,P[0],P[1],P[2]).h;
+  const g0=pg[0],g1=pg[1],g2=pg[2],g3=pg[3]; let u=0.5,v=0.5;   // bilineare Inversion (Newton)
+  for(let it=0;it<10;it++){
+    const Gx=(1-u)*(1-v)*g0.x+u*(1-v)*g1.x+u*v*g2.x+(1-u)*v*g3.x;
+    const Gz=(1-u)*(1-v)*g0.z+u*(1-v)*g1.z+u*v*g2.z+(1-u)*v*g3.z;
+    const Fx=Gx-p.x,Fz=Gz-p.z;
+    const a=(1-v)*(g1.x-g0.x)+v*(g2.x-g3.x), b=(1-u)*(g3.x-g0.x)+u*(g2.x-g1.x);
+    const c=(1-v)*(g1.z-g0.z)+v*(g2.z-g3.z), d=(1-u)*(g3.z-g0.z)+u*(g2.z-g1.z);
+    const det=a*d-b*c; if(Math.abs(det)<1e-9) break;
+    u-=(d*Fx-b*Fz)/det; v-=(-c*Fx+a*Fz)/det;
+  }
+  if(u>=-0.06&&u<=1.06&&v>=-0.06&&v<=1.06)
+    return (1-u)*(1-v)*ys[0]+u*(1-v)*ys[1]+u*v*ys[2]+(1-u)*v*ys[3];
+  const t1=triHeight(p,P[0],P[1],P[2]);                       // Fallback: zwei Dreiecke
+  return t1.wmin>=-0.02 ? t1.h : triHeight(p,P[0],P[2],P[3]).h;
 }
-// Richtungsbasierter Fit: jede Ecke zeigt gleichwertig zu ihrem Pfosten
-function sailFit(s){
-  const local=sailLocalCorners(s); const posts=s.posts.map(pi=>poleTop(pi));
-  const cP=local.reduce((a,v)=>a.add(v.clone()),new THREE.Vector3()).multiplyScalar(1/local.length);
-  const cQ=posts.reduce((a,v)=>a.add(v.clone()),new THREE.Vector3()).multiplyScalar(1/posts.length);
-  const P=local.map(v=>{ const u=v.clone().sub(cP); const l=u.length()||1; return u.multiplyScalar(1/l); });
-  const Q=posts.map(v=>{ const u=v.clone().sub(cQ); const l=u.length()||1; return u.multiplyScalar(1/l); });
-  return { quat:bestRotationQuat(P,Q), cP, cQ };
+// Lage des Segels: Ausrichtung, geklemmte Position, Lift-Funktion (local XZ → Welt 3D)
+function sailSurface(s){
+  const posts=s.posts.map(pi=>poleTop(pi));
+  const pg=posts.map(p=>({x:p.x,z:p.z})); const ys=posts.map(p=>p.y);
+  const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
+  const local=sailLocalCorners(s).map(v=>({x:v.x,z:v.z}));
+  const ang=bestAngle2D(local,pg,G); const ca=Math.cos(ang),sa=Math.sin(ang);
+  const cornersAt=c=>local.map(v=>({x:c.x+v.x*ca-v.z*sa, z:c.z+v.x*sa+v.z*ca}));
+  const inside=c=>cornersAt(c).every(p=>pointInPoly(p,pg));
+  const off={x:s.dx||0,z:s.dz||0}; let center={x:G.x+off.x,z:G.z+off.z};
+  if(!inside(center)){ let lo=0,hi=1;                          // Versatz auf Begrenzung klemmen
+    for(let i=0;i<26;i++){ const t=(lo+hi)/2; if(inside({x:G.x+off.x*t,z:G.z+off.z*t})) lo=t; else hi=t; }
+    center={x:G.x+off.x*lo, z:G.z+off.z*lo}; }
+  const lift=(lx,lz)=>{ const wx=center.x+lx*ca-lz*sa, wz=center.z+lx*sa+lz*ca;
+    return new THREE.Vector3(wx, surfaceHeight(pg,ys,{x:wx,z:wz},s.shape), wz); };
+  return { lift, posts, pg, ys, ang, center, G };
 }
-function sailCorners(s){
-  const {quat,cP,cQ}=sailFit(s); const off=new THREE.Vector3(s.dx||0,0,s.dz||0);
-  return sailLocalCorners(s).map(v=>v.clone().sub(cP).applyQuaternion(quat).add(cQ).add(off));
-}
+function sailCorners(s){ const surf=sailSurface(s); return sailLocalCorners(s).map(v=>surf.lift(v.x,v.z)); }
 
 /* ---- Aufbau ---- */
 function buildGarden(){
-  const {w,d,wallH}=S.garden;
+  const {w,d}=S.garden; const W=S.garden.walls;
   if(groundMesh) scene.remove(groundMesh);
   groundMesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshStandardMaterial({color:0x8aa66a,roughness:1}));
   groundMesh.rotation.x=-Math.PI/2; groundMesh.receiveShadow=true; scene.add(groundMesh);
@@ -252,9 +324,12 @@ function buildGarden(){
   gridHelper=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)),0x4a5a48,0x4a5a48);
   gridHelper.material.opacity=0.35; gridHelper.material.transparent=true; gridHelper.position.y=0.01; scene.add(gridHelper);
   if(wallsGroup) scene.remove(wallsGroup); wallsGroup=new THREE.Group();
-  if(wallH>0.01){ const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide}); const t=0.08;
-    const mk=(bw,bd,x,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(bw,wallH,bd),wMat);m.position.set(x,wallH/2,z);m.castShadow=true;m.receiveShadow=true;wallsGroup.add(m);};
-    mk(w,t,0,-d/2);mk(w,t,0,d/2);mk(t,d,-w/2,0);mk(t,d,w/2,0); }
+  const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide}); const t=0.08;
+  const mk=(bw,bd,x,z,h)=>{ if(!(h>0.01)) return; const m=new THREE.Mesh(new THREE.BoxGeometry(bw,h,bd),wMat); m.position.set(x,h/2,z); m.castShadow=true; m.receiveShadow=true; wallsGroup.add(m); };
+  mk(w,t,0,-d/2, W.yt);  // Wand Y=−T
+  mk(w,t,0, d/2, W.y0);  // Wand Y=0 (Bezug)
+  mk(t,d,-w/2,0, W.xb);  // Wand X=−B
+  mk(t,d, w/2,0, W.x0);  // Wand X=0 (Bezug)
   scene.add(wallsGroup);
   const half=Math.max(w,d)*0.85+6; const c=sun.shadow.camera; c.left=-half;c.right=half;c.top=half;c.bottom=-half;c.near=0.5;c.far=200;c.updateProjectionMatrix();
   northArrow.setLength(Math.max(w,d)/2.4,0.8,0.45);
@@ -269,9 +344,14 @@ function buildPoles(){
 }
 function buildSails(){
   S.sails.forEach((s,si)=>{ const mesh=sailMeshes[si]; if(!s.on){ mesh.visible=false; return; } mesh.visible=true;
-    const c=sailCorners(s); let pos;
-    if(s.shape===3) pos=new Float32Array([c[0].x,c[0].y,c[0].z,c[1].x,c[1].y,c[1].z,c[2].x,c[2].y,c[2].z]);
-    else pos=new Float32Array([c[0].x,c[0].y,c[0].z,c[1].x,c[1].y,c[1].z,c[2].x,c[2].y,c[2].z, c[0].x,c[0].y,c[0].z,c[2].x,c[2].y,c[2].z,c[3].x,c[3].y,c[3].z]);
+    const surf=sailSurface(s); let pos;
+    if(s.shape===3){ const c=sailLocalCorners(s).map(v=>surf.lift(v.x,v.z));
+      pos=new Float32Array([c[0].x,c[0].y,c[0].z, c[1].x,c[1].y,c[1].z, c[2].x,c[2].y,c[2].z]); }
+    else { const w=s.bw,l=s.bl,N=6,tris=[];               // gebogene Fläche als Gitter
+      const P=(i,j)=>surf.lift(-w/2+w*i/N, -l/2+l*j/N);
+      for(let i=0;i<N;i++) for(let j=0;j<N;j++){ const a=P(i,j),b=P(i+1,j),cc=P(i+1,j+1),d=P(i,j+1);
+        tris.push(a,b,cc, a,cc,d); }
+      pos=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{pos[idx*3]=p.x;pos[idx*3+1]=p.y;pos[idx*3+2]=p.z;}); }
     const g=mesh.geometry; g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.computeVertexNormals(); g.computeBoundingSphere();
     mesh.material.color.set(s.color); mesh.material.opacity=s.opacity;
   });
@@ -281,16 +361,57 @@ function buildRopes(){
   S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s); c.forEach((corner,k)=>{ const top=poleTop(s.posts[k]); ropesGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([corner,top]),mat)); }); });
 }
 function makeTable(f){ const tw=f.tw||1.1,tl=f.tl||0.7,th=f.th||0.74; const g=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x9c6b3f,roughness:0.8});
-  const top=new THREE.Mesh(new THREE.BoxGeometry(tw,0.05,tl),wood); top.position.y=th; top.castShadow=true; top.receiveShadow=true; g.add(top);
+  const ox=tw/2, oz=tl/2;   // Ecke (0,0) = Drehpunkt, Objekt liegt in +x/+z
+  const top=new THREE.Mesh(new THREE.BoxGeometry(tw,0.05,tl),wood); top.position.set(ox,th,oz); top.castShadow=true; top.receiveShadow=true; g.add(top);
   const lx=Math.max(0.05,tw/2-0.06),lz=Math.max(0.05,tl/2-0.06);
-  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,th,10),wood);leg.position.set(x,th/2,z);leg.castShadow=true;g.add(leg);}); return g; }
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,th,10),wood);leg.position.set(ox+x,th/2,oz+z);leg.castShadow=true;g.add(leg);}); return g; }
 function makeChair(){ const g=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:0x556070,roughness:0.85});
   const seat=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.05,0.45),m); seat.position.y=0.45; seat.castShadow=true; g.add(seat);
   const back=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.45,0.05),m); back.position.set(0,0.67,-0.2); back.castShadow=true; g.add(back);
   [[-0.18,-0.18],[0.18,-0.18],[0.18,0.18],[-0.18,0.18]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.45,8),m);leg.position.set(x,0.225,z);leg.castShadow=true;g.add(leg);}); return g; }
-function buildFurniture(){ furnGroup.clear(); const B=refWorld();
-  [['table',makeTable],['chair1',makeChair],['chair2',makeChair]].forEach(([key,maker])=>{ const f=S.furniture[key]; if(!f.on) return;
-    const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; furnGroup.add(obj); }); }
+function makePergola(f){ const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.6,metalness:0.25});
+  const ox=pw/2, oz=pl/2;   // Ecke (0,0) = Drehpunkt
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(pw,0.08,pl),mat); roof.position.set(ox,ph,oz); roof.castShadow=true; roof.receiveShadow=true; g.add(roof);
+  const lx=Math.max(0.06,pw/2-0.08),lz=Math.max(0.06,pl/2-0.08);
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,ph,0.08),mat);leg.position.set(ox+x,ph/2,oz+z);leg.castShadow=true;g.add(leg);});
+  g.userData.shadeMesh=roof; return g; }
+function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld();
+  [['table',makeTable],['chair1',makeChair],['chair2',makeChair],['pergola',makePergola]].forEach(([key,maker])=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+    const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; obj.userData.furnKey=key; furnGroup.add(obj);
+    if(key==='pergola') pergolaRoof=obj.userData.shadeMesh; });
+  furnGroup.updateMatrixWorld(true); }
+
+/* ---- Labels (Punkt 3) ---- */
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function makeTextSprite(lines,hex){
+  const fs=20,lh=24,pad=10; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+  const font=`600 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`; ctx.font=font;
+  const w=Math.ceil(Math.max(...lines.map(l=>ctx.measureText(l).width)))+pad*2;
+  const h=lines.length*lh+pad*2; canvas.width=w; canvas.height=h;
+  ctx.font=font; ctx.textBaseline='top';
+  ctx.fillStyle='rgba(17,22,28,0.85)'; roundRect(ctx,0,0,w,h,9); ctx.fill();
+  ctx.strokeStyle=hex; ctx.lineWidth=2; roundRect(ctx,1,1,w-2,h-2,8); ctx.stroke();
+  lines.forEach((l,i)=>{ ctx.fillStyle=i===0?hex:'#d3dde7'; ctx.fillText(l,pad,pad+i*lh); });
+  const tex=new THREE.CanvasTexture(canvas); tex.anisotropy=4;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+  const sc=0.004; spr.scale.set(w*sc,h*sc,1); spr.renderOrder=999; return spr;
+}
+function buildLabels(){
+  labelsGroup.clear(); refMarker.visible=true; if(!S.showLabels) return;
+  S.points.forEach((p,i)=>{ const top=poleTop(i);
+    const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`,`H ${fmt(p.h)} m`],POST_HEX[i]);
+    spr.position.set(top.x,top.y+0.55,top.z); labelsGroup.add(spr); });
+  const B=refWorld();
+  const furnLabel=(key,name,hex,topY,dims,hx,hz)=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+    const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);   // Mitte = Eck-Anker + gedrehter Halb-Versatz
+    const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
+    const spr=makeTextSprite([name,`Ecke X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],hex);
+    spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr); };
+  const t=S.furniture.table, pg=S.furniture.pergola;
+  if(t) furnLabel('table','Tisch','#d9a066',(t.th||0.74),`B ${fmt(t.tw)} · L ${fmt(t.tl)} · H ${fmt(t.th)} m`,(t.tw||1.1)/2,(t.tl||0.7)/2);
+  if(pg) furnLabel('pergola','Pergola','#aab3bd',(pg.ph||2.2),`B ${fmt(pg.pw)} · L ${fmt(pg.pl)} · H ${fmt(pg.ph)} m`,(pg.pw||3)/2,(pg.pl||3)/2);
+}
 
 function updateSun(){
   const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(S.timeMin);
@@ -320,18 +441,58 @@ function updateShadow(day){
       const loop=[...proj,proj[0]].map(p=>new THREE.Vector3(p.x,0.025,p.z)); shadowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop),new THREE.LineBasicMaterial({color:0x10161d}))); }
     activeMeshes.push(sailMeshes[si]);
   });
+  const blockers=[...activeMeshes]; if(pergolaRoof) blockers.push(pergolaRoof);
   const B=refWorld();
-  const probe={ table:[B.x+S.furniture.table.x,(S.furniture.table.th||0.74),B.z+S.furniture.table.y], chair1:[B.x+S.furniture.chair1.x,0.45,B.z+S.furniture.chair1.y], chair2:[B.x+S.furniture.chair2.x,0.45,B.z+S.furniture.chair2.y] };
+  const T=S.furniture.table; const tyr=(T.yaw||0)*DEG, thx=(T.tw||1.1)/2, thz=(T.tl||0.7)/2;
+  const tcx=B.x+T.x + thx*Math.cos(tyr) - thz*Math.sin(tyr), tcz=B.z+T.y + thx*Math.sin(tyr) + thz*Math.cos(tyr);
+  const probe={ table:[tcx,(T.th||0.74),tcz], chair1:[B.x+S.furniture.chair1.x,0.45,B.z+S.furniture.chair1.y], chair2:[B.x+S.furniture.chair2.x,0.45,B.z+S.furniture.chair2.y] };
   const names={table:'Tisch',chair1:'Stuhl 1',chair2:'Stuhl 2'};
   Object.keys(probe).forEach(k=>{ if(!S.furniture[k].on) return; raycaster.set(new THREE.Vector3(...probe[k]),sunDir);
-    const shaded=activeMeshes.length>0 && raycaster.intersectObjects(activeMeshes,false).length>0;
+    const shaded=blockers.length>0 && raycaster.intersectObjects(blockers,false).length>0;
     html+=`${names[k]}: <b>${shaded?'🟦 im Schatten':'☀️ in der Sonne'}</b><br>`; });
   out.innerHTML=html||'Keine Segel aktiv.';
 }
-function updateRef(){ refMarker.position.copy(refWorld()); const B=refWorld(); document.getElementById('refWorld').textContent=`Weltkoordinate: X ${B.x.toFixed(2)} · Y ${B.z.toFixed(2)} · Z ${B.y.toFixed(2)}`; }
-function updateRig(){ buildPoles(); buildSails(); buildRopes(); }
+function updateRef(){ refMarker.position.copy(refWorld()); }
+function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); updateSun(); }
+
+/* ---- Tagesauswertung: Schattenfläche 10–18 Uhr ---- */
+const ROUND=n=>Math.round(n*100)/100;
+function sunDirAtMin(min){
+  const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(min);
+  const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
+  const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
+  return { dir, alt };
+}
+function sailGroundArea(s,dir){
+  if(dir.y<=0.02) return 0;
+  const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(dir,-(P.y/dir.y)));
+  let area=0; for(let i=0;i<proj.length;i++){ const a=proj[i],b=proj[(i+1)%proj.length]; area+=a.x*b.z-b.x*a.z; }
+  return Math.abs(area)/2;
+}
+// integriert die Bodenschattenfläche je aktivem Segel über 10:00–18:00 (Trapezregel)
+function computeDayShade(){
+  const start=600,end=1080,step=15, hours=(end-start)/60;
+  const sums=S.sails.map(()=>0);
+  for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1; const dayOk=alt>0&&dir.y>0.02;
+    S.sails.forEach((s,si)=>{ if(s.on && dayOk) sums[si]+=sailGroundArea(s,dir)*wgt; }); }
+  const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, perSail:[], total_m2h:0, total_avg_m2:0 };
+  S.sails.forEach((s,si)=>{ if(!s.on) return; const integral=sums[si]*step/60, avg=integral/hours;
+    res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg) });
+    res.total_m2h+=integral; res.total_avg_m2+=avg; });
+  res.total_m2h=ROUND(res.total_m2h); res.total_avg_m2=ROUND(res.total_avg_m2);
+  return res;
+}
+function renderDayShade(){
+  const r=computeDayShade(); S.shadeAnalysis=r;
+  const out=document.getElementById('dayShade'); if(!out) return;
+  if(!r.perSail.length){ out.innerHTML='Kein aktives Segel.'; return; }
+  let html=`<span style="color:var(--muted)">${r.date} · 10–18 Uhr</span><br>`;
+  r.perSail.forEach(p=>{ html+=`Segel ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
+  if(r.perSail.length>1) html+=`Gesamt: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
+  out.innerHTML=html;
+}
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); updateSun(); renderDayShade(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
@@ -349,36 +510,46 @@ function link(card,cls,lo,hi,apply){
   const set=v=>{ v=+v; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=v; apply(v); touch(); };
   sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
 }
-// dito für Elemente mit festen IDs
+// reines Zahlenfeld (ohne Schieber) – für Segelmaße (Punkt 4)
+function bindNum(card,cls,lo,hi,apply){
+  const el=card.querySelector('.'+cls); if(!el) return;
+  el.onchange=()=>{ let v=+el.value; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); el.value=v; apply(v); updateAll(); touch(); };
+}
 function linkId(slId,numId,lo,hi,apply){
   const sl=$(slId),nu=$(numId);
   const set=v=>{ v=+v; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=v; apply(v); touch(); };
   sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
   nu.value=sl.value;
 }
-// Schieber+Zahl-Zeile als HTML
 function rowHTML(label,cls,min,max,step,val,unit,def){
   return `<div class="row"><label>${label}</label>`+
     `<input type="range" class="${cls}" min="${min}" max="${max}" step="${step}" value="${val}"${def!==undefined?` data-default="${def}"`:''}>`+
     `<input type="number" class="num ${cls}n" min="${min}" max="${max}" step="${step}" value="${val}">`+
     (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
 }
+function numRowHTML(label,cls,val,unit){
+  return `<div class="row"><label>${label}</label>`+
+    `<input type="number" class="num ${cls}" style="width:auto;flex:1" min="0.5" max="20" step="0.1" value="${val}">`+
+    (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
+}
 
 function wireStaticUI(){
   $('gw').value=S.garden.w; $('gw').dataset.default=DEF.garden.w; linkId('gw','gwn',3,30,v=>{S.garden.w=v;buildGarden();updateAll();});
   $('gd').value=S.garden.d; $('gd').dataset.default=DEF.garden.d; linkId('gd','gdn',3,30,v=>{S.garden.d=v;buildGarden();updateAll();});
-  $('wh').value=S.garden.wallH; $('wh').dataset.default=DEF.garden.wallH; linkId('wh','whn',0,4,v=>{S.garden.wallH=v;buildGarden();});
-  $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();});
-  $('refCorner').value=S.ref.corner; $('refCorner').onchange=e=>{S.ref.corner=+e.target.value; updateAll(); touch();};
-  $('rox').value=S.ref.ox; $('rox').oninput=e=>{S.ref.ox=+e.target.value;updateAll();touch();};
-  $('roy').value=S.ref.oy; $('roy').oninput=e=>{S.ref.oy=+e.target.value;updateAll();touch();};
-  $('roz').value=S.ref.oz; $('roz').oninput=e=>{S.ref.oz=+e.target.value;updateAll();touch();};
-  $('lat').value=S.loc.lat; $('lat').oninput=e=>{S.loc.lat=+e.target.value;updateSun();touch();};
-  $('lon').value=S.loc.lon; $('lon').oninput=e=>{S.loc.lon=+e.target.value;updateSun();touch();};
-  $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();touch();};
+  const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,4,v=>{S.garden.walls[key]=v;buildGarden();}); };
+  wallRow('wx0','wx0n','x0'); wallRow('wxb','wxbn','xb'); wallRow('wy0','wy0n','y0'); wallRow('wyt','wytn','yt');
+  $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
+  const syncCity=()=>{ $('city').value=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; if(!$('city').value||$('city').selectedIndex<0) $('city').value='manual'; };
+  $('city').onchange=e=>{ if(e.target.value==='manual') return; const [la,lo]=e.target.value.split(',').map(Number);
+    S.loc.lat=la; S.loc.lon=lo; $('lat').value=la; $('lon').value=lo; updateSun(); renderDayShade(); touch(); };
+  $('lat').value=S.loc.lat; $('lat').oninput=e=>{S.loc.lat=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
+  $('lon').value=S.loc.lon; $('lon').oninput=e=>{S.loc.lon=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
+  syncCity();
+  $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();renderDayShade();touch();};
   $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
   $('time').oninput=e=>{S.timeMin=+e.target.value; setTimeInputs(); updateSun(); touch();};
   $('timeInput').onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
+  const sl=$('showLabels'); sl.checked=S.showLabels; sl.onchange=()=>{ S.showLabels=sl.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
 }
 function setTimeInputs(){ const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0'); $('timeInput').value=`${hh}:${mm}`; }
@@ -393,18 +564,8 @@ function buildPointEditors(){
   S.points.forEach((p,i)=>{
     const D=DEF.points[i]; const card=document.createElement('div'); card.className='card';
     card.innerHTML=`<h3><span><span class="dot" style="background:${POST_HEX[i]}"></span>Pfosten ${i+1}</span></h3>
-      <div class="seg"><button data-m="xyz" class="${p.mode==='xyz'?'active':''}">Direkt X/Y/H</button><button data-m="polar" class="${p.mode==='polar'?'active':''}">Laser (Polar)</button></div>
-      <div class="bodyXYZ" style="${p.mode==='xyz'?'':'display:none'}">
-        ${rowHTML('X','rx',-15,15,0.1,p.x,'m',D.x)}${rowHTML('Y','ry',-15,15,0.1,p.y,'m',D.y)}${rowHTML('Höhe','rh',0.3,6,0.1,p.h,'m',D.h)}
-      </div>
-      <div class="bodyPOLAR" style="${p.mode==='polar'?'':'display:none'}">
-        ${rowHTML('Entfernung','rd',0,30,0.01,p.dist,'m')}${rowHTML('Horiz.-Winkel','rha',-180,360,1,p.ha,'°')}${rowHTML('Vert.-Winkel','rva',-90,90,1,p.va,'°')}
-      </div>`;
-    card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ p.mode=b.dataset.m;
-      card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('active',x.dataset.m===p.mode));
-      card.querySelector('.bodyXYZ').style.display=p.mode==='xyz'?'':'none'; card.querySelector('.bodyPOLAR').style.display=p.mode==='polar'?'':'none'; updateAll(); touch(); });
+      ${rowHTML('X','rx',-15,15,0.1,p.x,'m',D.x)}${rowHTML('Y','ry',-15,15,0.1,p.y,'m',D.y)}${rowHTML('Höhe','rh',0.3,6,0.1,p.h,'m',D.h)}`;
     link(card,'rx',-15,15,v=>{p.x=v;updateAll();}); link(card,'ry',-15,15,v=>{p.y=v;updateAll();}); link(card,'rh',0.3,6,v=>{p.h=v;updateAll();});
-    link(card,'rd',0,30,v=>{p.dist=v;updateAll();}); link(card,'rha',-180,360,v=>{p.ha=v;updateAll();}); link(card,'rva',-90,90,v=>{p.va=v;updateAll();});
     host.appendChild(card);
   });
 }
@@ -415,24 +576,24 @@ function rotateSail(s,dir){ if(dir>0) s.posts.unshift(s.posts.pop()); else s.pos
 function buildSailEditors(){
   const host=$('sails'); host.innerHTML='';
   S.sails.forEach((s,si)=>{
-    const D=DEF.sails[si]; const card=document.createElement('div'); card.className='card';
+    const card=document.createElement('div'); card.className='card';
     const sizeHtml = s.shape===3
-      ? rowHTML('Seite a','sa',1,12,0.1,s.a,'m',D.a)+rowHTML('Seite b','sb',1,12,0.1,s.b,'m',D.b)+rowHTML('Seite c','sc',1,12,0.1,s.c,'m',D.c)
-      : rowHTML('Breite','bw',1,12,0.1,s.bw,'m',D.bw)+rowHTML('Länge','bl',1,12,0.1,s.bl,'m',D.bl);
+      ? numRowHTML('Seite a','sa',s.a,'m')+numRowHTML('Seite b','sb',s.b,'m')+numRowHTML('Seite c','sc',s.c,'m')
+      : numRowHTML('Breite','bw',s.bw,'m')+numRowHTML('Länge','bl',s.bl,'m');
     let cornersHtml=''; for(let k=0;k<s.shape;k++) cornersHtml+=`<div class="row"><label>Ecke ${k+1}</label><select class="ps" data-k="${k}">${postOptions(s.posts[k])}</select><span class="val rl" data-si="${si}" data-k="${k}">– m</span></div>`;
     card.innerHTML=`<h3>Segel ${si+1}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${s.on?'checked':''}> aktiv</label></h3>
       <div class="seg"><button data-n="3" class="${s.shape===3?'active':''}">3 Ecken</button><button data-n="4" class="${s.shape===4?'active':''}">4 Ecken</button></div>
       ${sizeHtml}${cornersHtml}
-      <div class="row"><label>Drehen</label><button class="minib rotL" title="gegen Uhrzeigersinn">⟲</button><button class="minib rotR" title="im Uhrzeigersinn">⟳</button><button class="minib ctr" title="Maus-Versatz zurücksetzen">Mitte</button></div>
+      <div class="row"><label>Drehen</label><button class="minib rotL" title="gegen Uhrzeigersinn">⟲</button><button class="minib rotR" title="im Uhrzeigersinn">⟳</button><button class="minib ctr" title="zentriert zwischen die Pfosten">Mitte</button></div>
       <div class="row"><label>Farbe</label><input class="scol" type="color" value="${s.color}"></div>
       ${rowHTML('Deckkraft','so',0.3,1,0.05,s.opacity,'',1)}
-      <p class="hint" style="margin:6px 0 0">Segel im 3D-Fenster mit der Maus ziehen.</p>`;
+      <p class="hint" style="margin:6px 0 0">Mit der Maus zwischen die Pfosten ziehen. Seillängen = kürzeste Verbindung Ecke→Pfosten.</p>`;
     const q=sel=>card.querySelector(sel);
     q('.on').onchange=e=>{ s.on=e.target.checked; updateAll(); touch(); };
     card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ const n=+b.dataset.n; if(n===s.shape) return;
       s.shape=n; s.posts=s.posts.slice(0,n); while(s.posts.length<n) s.posts.push(nextFreePost(s)); buildSailEditors(); updateAll(); touch(); });
-    if(s.shape===3){ link(card,'sa',1,12,v=>{s.a=v;updateAll();}); link(card,'sb',1,12,v=>{s.b=v;updateAll();}); link(card,'sc',1,12,v=>{s.c=v;updateAll();}); }
-    else { link(card,'bw',1,12,v=>{s.bw=v;updateAll();}); link(card,'bl',1,12,v=>{s.bl=v;updateAll();}); }
+    if(s.shape===3){ bindNum(card,'sa',0.5,20,v=>s.a=v); bindNum(card,'sb',0.5,20,v=>s.b=v); bindNum(card,'sc',0.5,20,v=>s.c=v); }
+    else { bindNum(card,'bw',0.5,20,v=>s.bw=v); bindNum(card,'bl',0.5,20,v=>s.bl=v); }
     card.querySelectorAll('.ps').forEach(sel=>sel.onchange=e=>{ s.posts[+sel.dataset.k]=+e.target.value; updateAll(); touch(); });
     q('.rotL').onclick=()=>{ rotateSail(s,-1); buildSailEditors(); updateAll(); touch(); };
     q('.rotR').onclick=()=>{ rotateSail(s, 1); buildSailEditors(); updateAll(); touch(); };
@@ -444,24 +605,35 @@ function buildSailEditors(){
 }
 
 function buildFurnitureEditors(){
-  const host=$('furniture'); host.innerHTML=''; const labels={table:'Tisch',chair1:'Stuhl 1',chair2:'Stuhl 2'};
-  Object.keys(S.furniture).forEach(key=>{
-    const f=S.furniture[key]; const D=DEF.furniture[key]; const card=document.createElement('div'); card.className='card';
-    let sizeHtml=''; if(key==='table') sizeHtml=rowHTML('Breite','tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML('Länge','tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML('Höhe','th',0.4,1.1,0.01,f.th,'m',D.th);
+  const host=$('furniture'); host.innerHTML=''; const labels={table:'Tisch',chair1:'Stuhl 1',chair2:'Stuhl 2',pergola:'Pergola'};
+  ['table','chair1','chair2','pergola'].forEach(key=>{
+    const f=S.furniture[key]; if(!f) return; const D=DEF.furniture[key]; const card=document.createElement('div'); card.className='card'; card.dataset.fkey=key;
+    let sizeHtml='';
+    if(key==='table') sizeHtml=rowHTML('Breite','tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML('Länge','tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML('Höhe','th',0.4,1.1,0.01,f.th,'m',D.th);
+    if(key==='pergola') sizeHtml=rowHTML('Breite','pw',1,6,0.1,f.pw,'m',D.pw)+rowHTML('Länge','pl',1,6,0.1,f.pl,'m',D.pl)+rowHTML('Höhe','ph',1.8,3,0.05,f.ph,'m',D.ph);
     card.innerHTML=`<h3>${labels[key]}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${f.on?'checked':''}> sichtbar</label></h3>
       ${rowHTML('X','fx',-15,15,0.1,f.x,'m',D.x)}${rowHTML('Y','fy',-15,15,0.1,f.y,'m',D.y)}${rowHTML('Drehung','fyaw',-180,180,1,f.yaw,'°',D.yaw)}${sizeHtml}`;
     const q=s=>card.querySelector(s);
     q('.on').onchange=e=>{f.on=e.target.checked; buildFurniture(); updateSun(); touch();};
     link(card,'fx',-15,15,v=>{f.x=v;buildFurniture();updateSun();}); link(card,'fy',-15,15,v=>{f.y=v;buildFurniture();updateSun();}); link(card,'fyaw',-180,180,v=>{f.yaw=v;buildFurniture();});
     if(key==='table'){ link(card,'tw',0.5,3,v=>{f.tw=v;buildFurniture();updateSun();}); link(card,'tl',0.5,3,v=>{f.tl=v;buildFurniture();updateSun();}); link(card,'th',0.4,1.1,v=>{f.th=v;buildFurniture();updateSun();}); }
+    if(key==='pergola'){ link(card,'pw',1,6,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,6,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();}); }
     host.appendChild(card);
   });
 }
+// X/Y-Felder einer Möbelkarte nach dem Verschieben aktualisieren
+function syncFurnitureInputs(key){ const card=document.querySelector(`#furniture .card[data-fkey="${key}"]`); if(!card) return; const f=S.furniture[key];
+  const fx=card.querySelector('.fx'),fxn=card.querySelector('.fxn'),fy=card.querySelector('.fy'),fyn=card.querySelector('.fyn');
+  if(fx){ fx.value=f.x.toFixed(1); fxn.value=f.x.toFixed(1); } if(fy){ fy.value=f.y.toFixed(1); fyn.value=f.y.toFixed(1); } }
 
-$('btnExport').onclick=()=>{ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='sonnensegel-setup.json'; a.click(); URL.revokeObjectURL(a.href); };
+$('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  a.download=`sonnensegel-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}.json`;
+  a.click(); URL.revokeObjectURL(a.href); };
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=Object.assign(defaultState(),obj); refreshUI(); saveState(); $('saveState').textContent='Import erfolgreich geladen.'; }catch(err){ $('saveState').textContent='⚠️ Import fehlgeschlagen: '+err.message; } };
+  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); $('saveState').textContent='Import erfolgreich geladen.'; }catch(err){ $('saveState').textContent='⚠️ Import fehlgeschlagen: '+err.message; } };
   r.readAsText(file); e.target.value=''; };
 $('btnReset').onclick=()=>{ if(confirm('Alles auf Standard zurücksetzen?')){ S=defaultState(); refreshUI(); saveState(); } };
 
@@ -471,17 +643,28 @@ function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.se
 window.addEventListener('resize',onResize);
 function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
 
-// Segel mit der Maus ziehen
+/* ---- Maus-Drag: Segel + Möbel (Punkt 6) ---- */
 let drag=null;
 function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
+function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
 function onPointerDown(e){ if(e.button!==0) return; raycaster.setFromCamera(ndc(e),camera);
-  const meshes=sailMeshes.filter(m=>m.visible); const hits=raycaster.intersectObjects(meshes,false);
-  if(hits.length){ drag={ si:sailMeshes.indexOf(hits[0].object), y:hits[0].point.y, last:hits[0].point.clone() }; controls.enabled=false; } }
-function onPointerMove(e){ if(!drag) return; raycaster.setFromCamera(ndc(e),camera);
-  const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-drag.y); const pt=new THREE.Vector3();
-  if(raycaster.ray.intersectPlane(plane,pt)){ const s=S.sails[drag.si]; s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
-    buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
-function onPointerUp(){ if(drag){ drag=null; controls.enabled=true; } }
+  // 1) Segel
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
+  // 2) Möbel
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; const pt=groundPoint(e,0);
+    if(o && pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; } }
+}
+function onPointerMove(e){ if(!drag) return;
+  if(drag.type==='sail'){ const pt=groundPoint(e,drag.y); if(pt){ const s=S.sails[drag.si];
+      s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
+      const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;  // an Begrenzung geklemmt
+      buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
+  else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
+      buildFurniture(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
+}
+function onPointerUp(){ if(!drag) return; drag=null; controls.enabled=true; }
 renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
 window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
 
