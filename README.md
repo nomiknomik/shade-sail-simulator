@@ -5,6 +5,9 @@
 **Browserbasierter 3D-Planer für Sonnensegel / Shade Sails**  
 Visualisiert Schattenwurf, Segelausrichtung und Möbel-Beschattung zu jeder Tages- und Jahreszeit.
 
+
+![Banner](screenshots/social-preview.png)
+
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://nomiknomik.github.io/shade-sail-simulator/)
 [![Keine Installation](https://img.shields.io/badge/Keine%20Installation-open%20index.html-brightgreen?style=for-the-badge)](#schnellstart)
 [![Three.js 0.160](https://img.shields.io/badge/Three.js-0.160-black?style=for-the-badge&logo=threedotjs)](https://threejs.org)
