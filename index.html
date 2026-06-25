@@ -54,7 +54,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title">Shade Sail Simulator</h1>
-      <div class="ver" id="h-ver">Version 3.4 · Multilingual · Larger Labels</div>
+      <div class="ver">Version 3.7 · DE/EN/RU · Wände einzeln · Tagesauswertung</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -77,29 +77,26 @@
       <h2 data-i18n="sec-garden"></h2>
       <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="30" step="0.5"><input id="gwn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
       <div class="row"><label data-i18n="lbl-depth"></label><input id="gd" type="range" min="3" max="30" step="0.5"><input id="gdn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wallh"></label><input id="wh" type="range" min="0" max="4" step="0.1"><input id="whn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="4" step="0.1"><input id="wx0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="4" step="0.1"><input id="wxbn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="4" step="0.1"><input id="wy0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="4" step="0.1"><input id="wytn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
       <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="number" min="0" max="360" step="1"><span class="unit">°</span></div>
-    </div>
-
-    <div class="group">
-      <h2 data-i18n="sec-ref"></h2>
-      <p class="hint" data-i18n="hint-ref"></p>
-      <div class="row"><label data-i18n="lbl-corner"></label>
-        <select id="refCorner">
-          <option value="0" data-i18n="corner-0"></option>
-          <option value="1" data-i18n="corner-1"></option>
-          <option value="2" data-i18n="corner-2"></option>
-          <option value="3" data-i18n="corner-3"></option>
-        </select>
-      </div>
-      <div class="row"><label data-i18n="lbl-offx"></label><input id="rox" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <div class="row"><label data-i18n="lbl-offy"></label><input id="roy" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <div class="row"><label data-i18n="lbl-offz"></label><input id="roz" type="number" class="num" step="0.1" style="width:auto;flex:1"></div>
-      <p class="hint" id="refWorld"></p>
+      <p class="hint" data-i18n="hint-walls"></p>
     </div>
 
     <div class="group">
       <h2 data-i18n="sec-location"></h2>
+      <div class="row"><label data-i18n="lbl-city"></label>
+        <select id="city">
+          <option value="manual" data-i18n="city-manual"></option>
+          <option value="47.5536,7.9447">Bad Säckingen</option>
+          <option value="48.4636,8.4111">Freudenstadt</option>
+          <option value="49.0069,8.4037">Karlsruhe</option>
+          <option value="48.1351,11.5820">München</option>
+          <option value="48.7606,8.2398">Baden-Baden</option>
+        </select>
+      </div>
       <div class="row"><label data-i18n="lbl-lat"></label><input id="lat" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
       <div class="row"><label data-i18n="lbl-lon"></label><input id="lon" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
       <div class="row"><label data-i18n="lbl-date"></label><input id="date" type="date"></div>
@@ -113,6 +110,7 @@
     <div class="group">
       <h2 data-i18n="sec-posts"></h2>
       <p class="hint" data-i18n="hint-posts"></p>
+      <div class="row"><label data-i18n="lbl-labels"></label><input id="showLabels" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-labels-3d"></span></div>
       <div id="points"></div>
     </div>
 
@@ -124,6 +122,7 @@
 
     <div class="group">
       <h2 data-i18n="sec-furniture"></h2>
+      <p class="hint" data-i18n="hint-furniture"></p>
       <div id="furniture"></div>
     </div>
 
@@ -131,6 +130,11 @@
       <h2 data-i18n="sec-shadow"></h2>
       <div class="row"><label data-i18n="lbl-showshadow"></label><input id="showShadow" type="checkbox" checked style="accent-color:var(--sun)"></div>
       <div class="readout" id="shadowReadout"></div>
+    </div>
+    <div class="group">
+      <h2 data-i18n="sec-dayshade"></h2>
+      <p class="hint" data-i18n="hint-dayshade"></p>
+      <div class="readout" id="dayShade"></div>
     </div>
     <div class="group"><h2 data-i18n="sec-sun"></h2><div class="readout" id="sunReadout"></div></div>
     <div class="group"><h2 data-i18n="sec-legend"></h2>
@@ -151,6 +155,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const DEG=Math.PI/180;
 const STORE_KEY='sonnensegel-v7';
 const POST_HEX=['#e74c3c','#f39c12','#f1c40f','#2ecc71','#3498db','#9b59b6'];
+const num=(v,def)=>{ v=+v; return isNaN(v)?def:v; };
 
 /* ============================================================
    TRANSLATIONS
@@ -160,12 +165,12 @@ const TRANSLATIONS = {
     'page-title': 'Sonnensegel-Simulator',
     'sec-data': 'Daten',
     'sec-garden': 'Garten',
-    'sec-ref': 'Bezugspunkt',
     'sec-location': 'Standort & Zeit',
     'sec-posts': 'Pfosten',
     'sec-sails': 'Segel',
     'sec-furniture': 'Möbel',
     'sec-shadow': 'Schatten',
+    'sec-dayshade': 'Tagesauswertung',
     'sec-sun': 'Sonne',
     'sec-legend': 'Legende',
     'btn-export': '⬇ Export',
@@ -174,67 +179,65 @@ const TRANSLATIONS = {
     'btn-play': '▶ Tag abspielen',
     'btn-pause': '⏸ Pause',
     'btn-now': 'Jetzt',
-    'hint-save': 'Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Jeder Schieber ist auch als Zahl eingebbar.',
-    'hint-ref': 'Nullpunkt für alle X/Y-Eingaben (Pfosten & Möbel), gemessen ab einer Gartenecke. Die Höhe Z zählt nur für die Laser-Messung.',
-    'hint-posts': '6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut – oder Laser (Entfernung + Winkel).',
-    'hint-sails': 'Feste Größe je Segel. Die Lage wird aus den Pfosten berechnet (gespannte Seile, jede Ecke zeigt zu ihrem Pfosten). Im 3D mit der Maus verschieben; ⟲/⟳ dreht die Aufhängung.',
-    'hint-sail-drag': 'Segel im 3D-Fenster mit der Maus ziehen.',
+    'hint-save': 'Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Segel & Möbel lassen sich im 3D mit der Maus verschieben.',
+    'hint-walls': 'Vier Wände einzeln einstellbar (0 m = keine Wand). Bezugspunkt fest auf Ecke 3 (+X/+Y).',
+    'hint-posts': '6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut ab Boden.',
+    'hint-labels-3d': 'Labels & Maße im 3D anzeigen',
+    'hint-sails': 'Feste Maße je Segel (als Zahl eingeben). Im 3D mit der Maus ziehen. ⟲/⟳ dreht die Aufhängung.',
+    'hint-furniture': 'Im 3D mit der Maus in der Ebene verschiebbar.',
+    'hint-dayshade': 'Über den Tag (10–18 Uhr) integrierte Bodenschattenfläche je aktivem Segel – in m²·h. Steckt auch im JSON-Export.',
+    'hint-sail-note': 'Mit der Maus zwischen die Pfosten ziehen. Seillängen = kürzeste Verbindung Ecke→Pfosten.',
     'lbl-width': 'Breite',
     'lbl-depth': 'Tiefe',
-    'lbl-wallh': 'Wandhöhe',
+    'lbl-wall-x0': 'Wand X=0',
+    'lbl-wall-xb': 'Wand X=−B',
+    'lbl-wall-y0': 'Wand Y=0',
+    'lbl-wall-yt': 'Wand Y=−T',
     'lbl-north': 'Norden °',
-    'lbl-corner': 'Ecke',
-    'lbl-offx': 'Versatz X',
-    'lbl-offy': 'Versatz Y',
-    'lbl-offz': 'Höhe Z',
+    'lbl-city': 'Ort',
+    'city-manual': '— eigene Koordinaten —',
     'lbl-lat': 'Breitengrad',
     'lbl-lon': 'Längengrad',
     'lbl-date': 'Datum',
     'lbl-time': 'Uhrzeit',
+    'lbl-labels': 'Beschriftung',
     'lbl-showshadow': 'Fläche zeigen',
-    'corner-0': 'Ecke 1 (−X/−Y)',
-    'corner-1': 'Ecke 2 (+X/−Y)',
-    'corner-2': 'Ecke 3 (+X/+Y)',
-    'corner-3': 'Ecke 4 (−X/+Y)',
     'post-label': 'Pfosten',
     'sail-label': 'Segel',
-    'mode-direct': 'Direkt X/Y/H',
-    'mode-polar': 'Laser (Polar)',
     'lbl-height': 'Höhe',
-    'lbl-dist': 'Entfernung',
-    'lbl-ha': 'Horiz.-Winkel',
-    'lbl-va': 'Vert.-Winkel',
-    'lbl-3corners': '3 Ecken',
-    'lbl-4corners': '4 Ecken',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
     'lbl-side-a': 'Seite a',
     'lbl-side-b': 'Seite b',
     'lbl-side-c': 'Seite c',
     'lbl-bw': 'Breite',
     'lbl-bl': 'Länge',
+    'lbl-3corners': '3 Ecken',
+    'lbl-4corners': '4 Ecken',
+    'lbl-corner-n': 'Ecke',
     'lbl-rotate': 'Drehen',
     'lbl-color': 'Farbe',
     'lbl-opacity': 'Deckkraft',
     'lbl-active': 'aktiv',
     'lbl-visible': 'sichtbar',
-    'lbl-corner-n': 'Ecke',
     'lbl-center': 'Mitte',
+    'lbl-yaw': 'Drehung',
     'furn-table': 'Tisch',
     'furn-chair1': 'Stuhl 1',
     'furn-chair2': 'Stuhl 2',
-    'lbl-x': 'X',
-    'lbl-y': 'Y',
-    'lbl-yaw': 'Drehung',
+    'furn-pergola': 'Pergola',
     'shadow-night': 'Nachts kein Schatten.',
     'shadow-none': 'Keine Segel aktiv.',
     'shadow-sail': 'Segel',
     'shadow-shaded': '🟦 im Schatten',
     'shadow-sun': '☀️ in der Sonne',
+    'dayshade-none': 'Kein aktives Segel.',
+    'dayshade-total': 'Gesamt',
     'sun-alt': 'Höhe über Horizont',
     'sun-az': 'Azimut (0°=N)',
     'sun-status': 'Status',
     'sun-day': 'Tag ☀️',
     'sun-night': 'Nacht 🌙',
-    'world-coord': 'Weltkoordinate',
     'legend-text': '<span class="dot" style="background:#8aa66a"></span>Boden <span class="dot" style="background:var(--sun)"></span>Pfeil = Norden <span class="dot" style="background:var(--ref)"></span>Bezugspunkt<br>Pfosten 1–6 in eigenen Farben.',
     'import-ok': 'Import erfolgreich geladen.',
     'import-err': '⚠️ Import fehlgeschlagen: ',
@@ -242,18 +245,19 @@ const TRANSLATIONS = {
     'hud-night': '· Nacht',
     'rot-ccw': 'gegen Uhrzeigersinn',
     'rot-cw': 'im Uhrzeigersinn',
-    'center-reset': 'Maus-Versatz zurücksetzen',
+    'center-tip': 'zentriert zwischen die Pfosten',
+    'lbl-corner-ecke': 'Ecke',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
     'sec-data': 'Data',
     'sec-garden': 'Garden',
-    'sec-ref': 'Reference Point',
     'sec-location': 'Location & Time',
     'sec-posts': 'Posts',
     'sec-sails': 'Sails',
     'sec-furniture': 'Furniture',
     'sec-shadow': 'Shadow',
+    'sec-dayshade': 'Daily Analysis',
     'sec-sun': 'Sun',
     'sec-legend': 'Legend',
     'btn-export': '⬇ Export',
@@ -262,67 +266,65 @@ const TRANSLATIONS = {
     'btn-play': '▶ Play Day',
     'btn-pause': '⏸ Pause',
     'btn-now': 'Now',
-    'hint-save': 'Auto-saved in browser. Double-click a slider to reset to default. Each slider can also be entered as a number.',
-    'hint-ref': 'Origin for all X/Y inputs (posts & furniture), measured from a garden corner. Height Z is only used for laser measurements.',
-    'hint-posts': '6 posts in fixed colors. X/Y relative to reference point, height absolute – or laser (distance + angle).',
-    'hint-sails': 'Fixed size per sail. Position is calculated from posts (stretched ropes, each corner points to its post). Drag in 3D view; ⟲/⟳ rotates the suspension.',
-    'hint-sail-drag': 'Drag sail in the 3D window.',
+    'hint-save': 'Auto-saved in browser. Double-click a slider to reset to default. Sails & furniture can be dragged in 3D.',
+    'hint-walls': 'Four walls individually adjustable (0 m = no wall). Reference point fixed at Corner 3 (+X/+Y).',
+    'hint-posts': '6 posts in fixed colors. X/Y relative to reference point, height absolute from ground.',
+    'hint-labels-3d': 'Show labels & dimensions in 3D',
+    'hint-sails': 'Fixed dimensions per sail (enter as number). Drag in 3D. ⟲/⟳ rotates the suspension.',
+    'hint-furniture': 'Can be dragged horizontally in the 3D view.',
+    'hint-dayshade': 'Ground shadow area integrated over the day (10–18h) per active sail – in m²·h. Also included in JSON export.',
+    'hint-sail-note': 'Drag between the posts. Rope lengths = shortest corner→post distance.',
     'lbl-width': 'Width',
     'lbl-depth': 'Depth',
-    'lbl-wallh': 'Wall Height',
+    'lbl-wall-x0': 'Wall X=0',
+    'lbl-wall-xb': 'Wall X=−W',
+    'lbl-wall-y0': 'Wall Y=0',
+    'lbl-wall-yt': 'Wall Y=−D',
     'lbl-north': 'North °',
-    'lbl-corner': 'Corner',
-    'lbl-offx': 'Offset X',
-    'lbl-offy': 'Offset Y',
-    'lbl-offz': 'Height Z',
+    'lbl-city': 'Location',
+    'city-manual': '— custom coordinates —',
     'lbl-lat': 'Latitude',
     'lbl-lon': 'Longitude',
     'lbl-date': 'Date',
     'lbl-time': 'Time',
-    'lbl-showshadow': 'Show Area',
-    'corner-0': 'Corner 1 (−X/−Y)',
-    'corner-1': 'Corner 2 (+X/−Y)',
-    'corner-2': 'Corner 3 (+X/+Y)',
-    'corner-3': 'Corner 4 (−X/+Y)',
+    'lbl-labels': 'Labels',
+    'lbl-showshadow': 'Show area',
     'post-label': 'Post',
     'sail-label': 'Sail',
-    'mode-direct': 'Direct X/Y/H',
-    'mode-polar': 'Laser (Polar)',
     'lbl-height': 'Height',
-    'lbl-dist': 'Distance',
-    'lbl-ha': 'Horiz. Angle',
-    'lbl-va': 'Vert. Angle',
-    'lbl-3corners': '3 Corners',
-    'lbl-4corners': '4 Corners',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
     'lbl-side-a': 'Side a',
     'lbl-side-b': 'Side b',
     'lbl-side-c': 'Side c',
     'lbl-bw': 'Width',
     'lbl-bl': 'Length',
+    'lbl-3corners': '3 Corners',
+    'lbl-4corners': '4 Corners',
+    'lbl-corner-n': 'Corner',
     'lbl-rotate': 'Rotate',
     'lbl-color': 'Color',
     'lbl-opacity': 'Opacity',
     'lbl-active': 'active',
     'lbl-visible': 'visible',
-    'lbl-corner-n': 'Corner',
     'lbl-center': 'Center',
+    'lbl-yaw': 'Rotation',
     'furn-table': 'Table',
     'furn-chair1': 'Chair 1',
     'furn-chair2': 'Chair 2',
-    'lbl-x': 'X',
-    'lbl-y': 'Y',
-    'lbl-yaw': 'Rotation',
+    'furn-pergola': 'Pergola',
     'shadow-night': 'No shadow at night.',
     'shadow-none': 'No sails active.',
     'shadow-sail': 'Sail',
     'shadow-shaded': '🟦 in shade',
     'shadow-sun': '☀️ in sun',
+    'dayshade-none': 'No active sail.',
+    'dayshade-total': 'Total',
     'sun-alt': 'Altitude',
     'sun-az': 'Azimuth (0°=N)',
     'sun-status': 'Status',
     'sun-day': 'Day ☀️',
     'sun-night': 'Night 🌙',
-    'world-coord': 'World coordinate',
     'legend-text': '<span class="dot" style="background:#8aa66a"></span>Ground <span class="dot" style="background:var(--sun)"></span>Arrow = North <span class="dot" style="background:var(--ref)"></span>Reference Point<br>Posts 1–6 in individual colors.',
     'import-ok': 'Import loaded successfully.',
     'import-err': '⚠️ Import failed: ',
@@ -330,18 +332,19 @@ const TRANSLATIONS = {
     'hud-night': '· Night',
     'rot-ccw': 'counter-clockwise',
     'rot-cw': 'clockwise',
-    'center-reset': 'Reset drag offset',
+    'center-tip': 'center between posts',
+    'lbl-corner-ecke': 'Corner',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
     'sec-data': 'Данные',
     'sec-garden': 'Сад',
-    'sec-ref': 'Базовая точка',
     'sec-location': 'Место & Время',
     'sec-posts': 'Столбы',
     'sec-sails': 'Паруса',
     'sec-furniture': 'Мебель',
     'sec-shadow': 'Тень',
+    'sec-dayshade': 'Суточный анализ',
     'sec-sun': 'Солнце',
     'sec-legend': 'Легенда',
     'btn-export': '⬇ Экспорт',
@@ -350,67 +353,65 @@ const TRANSLATIONS = {
     'btn-play': '▶ Воспр. день',
     'btn-pause': '⏸ Пауза',
     'btn-now': 'Сейчас',
-    'hint-save': 'Автосохранение в браузере. Двойной клик по ползунку = значение по умолчанию. Каждый ползунок можно ввести числом.',
-    'hint-ref': 'Начало координат для X/Y (столбы и мебель), измеряется от угла сада. Высота Z используется только для лазерных измерений.',
-    'hint-posts': '6 столбов в фиксированных цветах. X/Y относительно базовой точки, высота абсолютная – или лазер (расстояние + угол).',
-    'hint-sails': 'Фиксированный размер паруса. Положение вычисляется из столбов (натянутые верёвки, каждый угол указывает на свой столб). Перетаскивать в 3D; ⟲/⟳ поворачивает подвес.',
-    'hint-sail-drag': 'Перетащите парус в окне 3D.',
+    'hint-save': 'Автосохранение в браузере. Двойной клик по ползунку = сброс. Паруса и мебель можно перетаскивать в 3D.',
+    'hint-walls': 'Четыре стены регулируются отдельно (0 м = нет стены). Базовая точка зафиксирована на Угол 3 (+X/+Y).',
+    'hint-posts': '6 столбов в фиксированных цветах. X/Y относительно базовой точки, высота — от пола.',
+    'hint-labels-3d': 'Показать метки и размеры в 3D',
+    'hint-sails': 'Фиксированные размеры паруса (введите числом). Перетащить в 3D. ⟲/⟳ вращает подвес.',
+    'hint-furniture': 'Можно перетаскивать в 3D по горизонтали.',
+    'hint-dayshade': 'Интегрированная площадь тени (10–18ч) по каждому активному парусу – в м²·ч. Также включена в JSON-экспорт.',
+    'hint-sail-note': 'Перетащите между столбами. Длина верёвки = кратчайшее расстояние угол→столб.',
     'lbl-width': 'Ширина',
     'lbl-depth': 'Глубина',
-    'lbl-wallh': 'Высота стены',
+    'lbl-wall-x0': 'Стена X=0',
+    'lbl-wall-xb': 'Стена X=−Ш',
+    'lbl-wall-y0': 'Стена Y=0',
+    'lbl-wall-yt': 'Стена Y=−Г',
     'lbl-north': 'Север °',
-    'lbl-corner': 'Угол',
-    'lbl-offx': 'Смещение X',
-    'lbl-offy': 'Смещение Y',
-    'lbl-offz': 'Высота Z',
+    'lbl-city': 'Место',
+    'city-manual': '— свои координаты —',
     'lbl-lat': 'Широта',
     'lbl-lon': 'Долгота',
     'lbl-date': 'Дата',
     'lbl-time': 'Время',
+    'lbl-labels': 'Метки',
     'lbl-showshadow': 'Показать область',
-    'corner-0': 'Угол 1 (−X/−Y)',
-    'corner-1': 'Угол 2 (+X/−Y)',
-    'corner-2': 'Угол 3 (+X/+Y)',
-    'corner-3': 'Угол 4 (−X/+Y)',
     'post-label': 'Столб',
     'sail-label': 'Парус',
-    'mode-direct': 'Прямой X/Y/H',
-    'mode-polar': 'Лазер (Полярн.)',
     'lbl-height': 'Высота',
-    'lbl-dist': 'Расстояние',
-    'lbl-ha': 'Гориз. угол',
-    'lbl-va': 'Верт. угол',
-    'lbl-3corners': '3 угла',
-    'lbl-4corners': '4 угла',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
     'lbl-side-a': 'Сторона a',
     'lbl-side-b': 'Сторона b',
     'lbl-side-c': 'Сторона c',
     'lbl-bw': 'Ширина',
     'lbl-bl': 'Длина',
+    'lbl-3corners': '3 угла',
+    'lbl-4corners': '4 угла',
+    'lbl-corner-n': 'Угол',
     'lbl-rotate': 'Вращение',
     'lbl-color': 'Цвет',
     'lbl-opacity': 'Прозрачность',
     'lbl-active': 'активен',
     'lbl-visible': 'видим',
-    'lbl-corner-n': 'Угол',
     'lbl-center': 'Центр',
+    'lbl-yaw': 'Поворот',
     'furn-table': 'Стол',
     'furn-chair1': 'Стул 1',
     'furn-chair2': 'Стул 2',
-    'lbl-x': 'X',
-    'lbl-y': 'Y',
-    'lbl-yaw': 'Поворот',
+    'furn-pergola': 'Пергола',
     'shadow-night': 'Ночью тени нет.',
     'shadow-none': 'Нет активных парусов.',
     'shadow-sail': 'Парус',
     'shadow-shaded': '🟦 в тени',
     'shadow-sun': '☀️ на солнце',
+    'dayshade-none': 'Нет активных парусов.',
+    'dayshade-total': 'Итого',
     'sun-alt': 'Высота над горизонтом',
     'sun-az': 'Азимут (0°=С)',
     'sun-status': 'Статус',
     'sun-day': 'День ☀️',
     'sun-night': 'Ночь 🌙',
-    'world-coord': 'Мировые координаты',
     'legend-text': '<span class="dot" style="background:#8aa66a"></span>Земля <span class="dot" style="background:var(--sun)"></span>Стрелка = Север <span class="dot" style="background:var(--ref)"></span>Базовая точка<br>Столбы 1–6 в индивидуальных цветах.',
     'import-ok': 'Импорт загружен успешно.',
     'import-err': '⚠️ Ошибка импорта: ',
@@ -418,22 +419,19 @@ const TRANSLATIONS = {
     'hud-night': '· Ночь',
     'rot-ccw': 'против часовой стрелки',
     'rot-cw': 'по часовой стрелке',
-    'center-reset': 'Сбросить смещение',
+    'center-tip': 'центрировать между столбами',
+    'lbl-corner-ecke': 'Угол',
   }
 };
 
 let currentLang = localStorage.getItem('shade-lang') || 'de';
-
 function t(key){ return (TRANSLATIONS[currentLang]||TRANSLATIONS.de)[key] || TRANSLATIONS.de[key] || key; }
 
 function applyTranslations(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key=el.dataset.i18n;
-    if(el.tagName==='BUTTON'||el.tagName==='LABEL'||el.tagName==='P'||el.tagName==='H2'||el.tagName==='H1'||el.tagName==='SPAN'){
-      if(key==='legend-text') el.innerHTML=t(key); else el.textContent=t(key);
-    } else if(el.tagName==='OPTION'){
-      el.textContent=t(key);
-    }
+    if(key==='legend-text') el.innerHTML=t(key);
+    else el.textContent=t(key);
   });
   document.getElementById('legendText').innerHTML=t('legend-text');
   ['de','en','ru'].forEach(l=>{
@@ -448,12 +446,12 @@ window.setLang=function(lang){
   currentLang=lang;
   localStorage.setItem('shade-lang',lang);
   applyTranslations();
-  // rebuild dynamic editors so they use new language
   buildPointEditors();
   buildSailEditors();
   buildFurnitureEditors();
   updateSun();
   updateShadow(sunDir.y>0.02);
+  renderDayShade();
 };
 
 /* ============================================================
@@ -461,31 +459,68 @@ window.setLang=function(lang){
    ============================================================ */
 function defaultState(){
   return {
-    garden:{ w:9.5, d:9.5, wallH:3, north:229 },
+    _pivotCorner:true,
+    garden:{ w:9.5, d:9.5, walls:{ x0:3, xb:3, y0:3, yt:3 }, north:229 },
     loc:{ lat:48.4636, lon:8.4111 },
     dateStr:new Date().toISOString().slice(0,10),
     timeMin:1092,
+    showLabels:false,
     ref:{ corner:2, ox:0, oy:0, oz:0 },
     points:[
-      { mode:'xyz', x:0,    y:0,    h:2.9, dist:4, ha:0,   va:30 },
-      { mode:'xyz', x:-7,   y:0,    h:3,   dist:4, ha:30,  va:30 },
-      { mode:'xyz', x:-9.5, y:0,    h:3,   dist:4, ha:60,  va:30 },
-      { mode:'xyz', x:-6.2, y:-9.5, h:2.5, dist:4, ha:120, va:30 },
-      { mode:'xyz', x:0,    y:-9.5, h:2.5, dist:4, ha:150, va:30 },
-      { mode:'xyz', x:2.5,  y:7.5,  h:3,   dist:4, ha:180, va:30 },
+      { x:0,    y:0,    h:2.9 },
+      { x:-7,   y:0,    h:3   },
+      { x:-9.5, y:0,    h:3   },
+      { x:-6.2, y:-9.5, h:2.5 },
+      { x:0,    y:-9.5, h:2.5 },
+      { x:2.5,  y:7.5,  h:3   },
     ],
     sails:[
       { on:true,  shape:3, bw:5.8, bl:3.6, a:6.4, b:8, c:4, dx:0, dz:0, posts:[3,4,0], color:'#c0392b', opacity:1 },
       { on:false, shape:3, bw:3,   bl:3,   a:3,   b:3, c:3, dx:0, dz:0, posts:[1,3,4], color:'#2c6fbb', opacity:1 },
     ],
     furniture:{
-      table:  { on:true, x:-4.75, y:-4.75, yaw:0, tw:1.1, tl:0.7, th:0.74 },
+      table:  { on:true, x:-5.3,  y:-5.1, yaw:0, tw:1.1, tl:0.7, th:0.74 },
       chair1: { on:true, x:-5.65, y:-4.75, yaw:90 },
       chair2: { on:true, x:-3.85, y:-4.75, yaw:-90 },
+      pergola:{ on:true, x:-3.5,  y:-3.5, yaw:0, pw:3, pl:3, ph:2.2 },
     },
   };
 }
-let S=loadState()||defaultState();
+
+function migrate(st){
+  if(!st) return null;
+  const d=defaultState();
+  const hadWalls = st.garden && st.garden.walls && typeof st.garden.walls==='object';
+  const legacyWallH = (st.garden && typeof st.garden.wallH==='number') ? st.garden.wallH : null;
+  st.garden=Object.assign({},d.garden,st.garden||{});
+  if(!hadWalls){
+    const wh=(legacyWallH!=null)?legacyWallH:3;
+    st.garden.walls={ x0:wh, xb:wh, y0:wh, yt:wh };
+  } else {
+    st.garden.walls=Object.assign({},d.garden.walls,st.garden.walls);
+  }
+  delete st.garden.wallH;
+  st.loc=Object.assign({},d.loc,st.loc||{});
+  st.ref={ corner:2, ox:0, oy:0, oz:0 };
+  if(!st.dateStr) st.dateStr=d.dateStr;
+  if(typeof st.timeMin!=='number') st.timeMin=d.timeMin;
+  if(typeof st.showLabels!=='boolean') st.showLabels=false;
+  if(!Array.isArray(st.points)||st.points.length<6) st.points=d.points;
+  st.points=st.points.map((p,i)=>({ x:num(p&&p.x, d.points[i].x), y:num(p&&p.y, d.points[i].y), h:num(p&&p.h, d.points[i].h) }));
+  if(!Array.isArray(st.sails)) st.sails=d.sails;
+  st.sails=st.sails.map((s,i)=>Object.assign({}, d.sails[i]||d.sails[0], s||{}));
+  st.furniture=Object.assign({},d.furniture,st.furniture||{});
+  ['table','chair1','chair2','pergola'].forEach(k=>{ st.furniture[k]=Object.assign({},d.furniture[k],st.furniture[k]||{}); });
+  if(!st._pivotCorner){
+    const tab=st.furniture.table, pg=st.furniture.pergola;
+    if(tab){ tab.x-=(tab.tw||1.1)/2; tab.y-=(tab.tl||0.7)/2; }
+    if(pg){ pg.x-=(pg.pw||3)/2; pg.y-=(pg.pl||3)/2; }
+    st._pivotCorner=true;
+  }
+  return st;
+}
+
+let S=migrate(loadState())||defaultState();
 const DEF=defaultState();
 
 /* ---- Three.js ---- */
@@ -502,6 +537,7 @@ const polesGroup=new THREE.Group(); scene.add(polesGroup);
 const ropesGroup=new THREE.Group(); scene.add(ropesGroup);
 const furnGroup=new THREE.Group(); scene.add(furnGroup);
 const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
+const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
 const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),new THREE.Vector3(0,0.02,0),4,0xf4a93c,0.9,0.5); scene.add(northArrow);
 const refMarker=new THREE.Group();
 const refPin=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6,8),new THREE.MeshStandardMaterial({color:0x22c3d6})); refPin.position.y=0.3;
@@ -509,17 +545,13 @@ const refBall=new THREE.Mesh(new THREE.SphereGeometry(0.12,16,12),new THREE.Mesh
 refMarker.add(refPin,refBall); scene.add(refMarker);
 const sailMeshes=[0,1].map(()=>{ const m=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({roughness:0.85,side:THREE.DoubleSide,transparent:true})); m.castShadow=true; scene.add(m); return m; });
 let sunDir=new THREE.Vector3(0,1,0);
+let pergolaRoof=null;
 const raycaster=new THREE.Raycaster();
 
 /* ---- Geometrie ---- */
 function gardenCorners(){ const {w,d}=S.garden; return [new THREE.Vector3(-w/2,0,-d/2),new THREE.Vector3(w/2,0,-d/2),new THREE.Vector3(w/2,0,d/2),new THREE.Vector3(-w/2,0,d/2)]; }
 function refWorld(){ const c=gardenCorners()[S.ref.corner]; return new THREE.Vector3(c.x+S.ref.ox,S.ref.oz,c.z+S.ref.oy); }
-function poleTop(i){
-  const p=S.points[i];
-  if(p.mode==='polar'){ const B=refWorld(); const ha=p.ha*DEG,va=p.va*DEG;
-    const dir=new THREE.Vector3(Math.cos(va)*Math.cos(ha),Math.sin(va),Math.cos(va)*Math.sin(ha)); return B.clone().add(dir.multiplyScalar(p.dist)); }
-  const B=refWorld(); return new THREE.Vector3(B.x+p.x,p.h,B.z+p.y);
-}
+function poleTop(i){ const p=S.points[i]; const B=refWorld(); return new THREE.Vector3(B.x+p.x,p.h,B.z+p.y); }
 function sailLocalCorners(s){
   if(s.shape===3){
     const a=s.a,b=s.b,c=s.c; const Cx=(b*b-a*a+c*c)/(2*c); const Cz=Math.sqrt(Math.max(0,b*b-Cx*Cx));
@@ -529,37 +561,57 @@ function sailLocalCorners(s){
   const w=s.bw,l=s.bl;
   return [ new THREE.Vector3(-w/2,0,-l/2),new THREE.Vector3(w/2,0,-l/2),new THREE.Vector3(w/2,0,l/2),new THREE.Vector3(-w/2,0,l/2) ];
 }
-function bestRotationQuat(P,Q){
-  let Sxx=0,Sxy=0,Sxz=0,Syx=0,Syy=0,Syz=0,Szx=0,Szy=0,Szz=0;
-  for(let i=0;i<P.length;i++){ const p=P[i],q=Q[i];
-    Sxx+=p.x*q.x;Sxy+=p.x*q.y;Sxz+=p.x*q.z; Syx+=p.y*q.x;Syy+=p.y*q.y;Syz+=p.y*q.z; Szx+=p.z*q.x;Szy+=p.z*q.y;Szz+=p.z*q.z; }
-  const N=[
-    [Sxx+Syy+Szz,Syz-Szy,Szx-Sxz,Sxy-Syx],
-    [Syz-Szy,Sxx-Syy-Szz,Sxy+Syx,Szx+Sxz],
-    [Szx-Sxz,Sxy+Syx,-Sxx+Syy-Szz,Syz+Szy],
-    [Sxy-Syx,Szx+Sxz,Syz+Szy,-Sxx-Syy+Szz]];
-  let maxabs=0; for(const r of N) for(const val of r) maxabs=Math.max(maxabs,Math.abs(val));
-  const k=10*(maxabs+1); for(let i=0;i<4;i++) N[i][i]+=k;
-  let v=[1,0.2,0.1,0.05];
-  for(let it=0;it<150;it++){ const w=[0,0,0,0]; for(let i=0;i<4;i++){ let su=0; for(let j=0;j<4;j++) su+=N[i][j]*v[j]; w[i]=su; } const nn=Math.hypot(w[0],w[1],w[2],w[3])||1; v=w.map(x=>x/nn); }
-  return new THREE.Quaternion(v[1],v[2],v[3],v[0]).normalize();
+function pointInPoly(p,poly){ let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i],b=poly[j];
+    if(((a.z>p.z)!==(b.z>p.z)) && (p.x<(b.x-a.x)*(p.z-a.z)/((b.z-a.z)||1e-9)+a.x)) inside=!inside; }
+  return inside; }
+function bestAngle2D(local,pg,G){ let sx=0,sc=0;
+  for(let k=0;k<local.length;k++){ const a=local[k],b={x:pg[k].x-G.x,z:pg[k].z-G.z};
+    sc+=a.x*b.x+a.z*b.z; sx+=a.x*b.z-a.z*b.x; }
+  return Math.atan2(sx,sc); }
+function triHeight(p,A,B,C){ const d=((B.z-C.z)*(A.x-C.x)+(C.x-B.x)*(A.z-C.z))||1e-9;
+  const w0=((B.z-C.z)*(p.x-C.x)+(C.x-B.x)*(p.z-C.z))/d;
+  const w1=((C.z-A.z)*(p.x-C.x)+(A.x-C.x)*(p.z-C.z))/d; const w2=1-w0-w1;
+  return {h:w0*A.y+w1*B.y+w2*C.y, wmin:Math.min(w0,w1,w2)}; }
+function surfaceHeight(pg,ys,p,shape){
+  const P=pg.map((g,k)=>({x:g.x,z:g.z,y:ys[k]}));
+  if(shape===3) return triHeight(p,P[0],P[1],P[2]).h;
+  const g0=pg[0],g1=pg[1],g2=pg[2],g3=pg[3]; let u=0.5,v=0.5;
+  for(let it=0;it<10;it++){
+    const Gx=(1-u)*(1-v)*g0.x+u*(1-v)*g1.x+u*v*g2.x+(1-u)*v*g3.x;
+    const Gz=(1-u)*(1-v)*g0.z+u*(1-v)*g1.z+u*v*g2.z+(1-u)*v*g3.z;
+    const Fx=Gx-p.x,Fz=Gz-p.z;
+    const a=(1-v)*(g1.x-g0.x)+v*(g2.x-g3.x), b=(1-u)*(g3.x-g0.x)+u*(g2.x-g1.x);
+    const c=(1-v)*(g1.z-g0.z)+v*(g2.z-g3.z), d=(1-u)*(g3.z-g0.z)+u*(g2.z-g1.z);
+    const det=a*d-b*c; if(Math.abs(det)<1e-9) break;
+    u-=(d*Fx-b*Fz)/det; v-=(-c*Fx+a*Fz)/det;
+  }
+  if(u>=-0.06&&u<=1.06&&v>=-0.06&&v<=1.06)
+    return (1-u)*(1-v)*ys[0]+u*(1-v)*ys[1]+u*v*ys[2]+(1-u)*v*ys[3];
+  const t1=triHeight(p,P[0],P[1],P[2]);
+  return t1.wmin>=-0.02 ? t1.h : triHeight(p,P[0],P[2],P[3]).h;
 }
-function sailFit(s){
-  const local=sailLocalCorners(s); const posts=s.posts.map(pi=>poleTop(pi));
-  const cP=local.reduce((a,v)=>a.add(v.clone()),new THREE.Vector3()).multiplyScalar(1/local.length);
-  const cQ=posts.reduce((a,v)=>a.add(v.clone()),new THREE.Vector3()).multiplyScalar(1/posts.length);
-  const P=local.map(v=>{ const u=v.clone().sub(cP); const l=u.length()||1; return u.multiplyScalar(1/l); });
-  const Q=posts.map(v=>{ const u=v.clone().sub(cQ); const l=u.length()||1; return u.multiplyScalar(1/l); });
-  return { quat:bestRotationQuat(P,Q), cP, cQ };
+function sailSurface(s){
+  const posts=s.posts.map(pi=>poleTop(pi));
+  const pg=posts.map(p=>({x:p.x,z:p.z})); const ys=posts.map(p=>p.y);
+  const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
+  const local=sailLocalCorners(s).map(v=>({x:v.x,z:v.z}));
+  const ang=bestAngle2D(local,pg,G); const ca=Math.cos(ang),sa=Math.sin(ang);
+  const cornersAt=c=>local.map(v=>({x:c.x+v.x*ca-v.z*sa, z:c.z+v.x*sa+v.z*ca}));
+  const inside=c=>cornersAt(c).every(p=>pointInPoly(p,pg));
+  const off={x:s.dx||0,z:s.dz||0}; let center={x:G.x+off.x,z:G.z+off.z};
+  if(!inside(center)){ let lo=0,hi=1;
+    for(let i=0;i<26;i++){ const t=(lo+hi)/2; if(inside({x:G.x+off.x*t,z:G.z+off.z*t})) lo=t; else hi=t; }
+    center={x:G.x+off.x*lo, z:G.z+off.z*lo}; }
+  const lift=(lx,lz)=>{ const wx=center.x+lx*ca-lz*sa, wz=center.z+lx*sa+lz*ca;
+    return new THREE.Vector3(wx, surfaceHeight(pg,ys,{x:wx,z:wz},s.shape), wz); };
+  return { lift, posts, pg, ys, ang, center, G };
 }
-function sailCorners(s){
-  const {quat,cP,cQ}=sailFit(s); const off=new THREE.Vector3(s.dx||0,0,s.dz||0);
-  return sailLocalCorners(s).map(v=>v.clone().sub(cP).applyQuaternion(quat).add(cQ).add(off));
-}
+function sailCorners(s){ const surf=sailSurface(s); return sailLocalCorners(s).map(v=>surf.lift(v.x,v.z)); }
 
 /* ---- Aufbau ---- */
 function buildGarden(){
-  const {w,d,wallH}=S.garden;
+  const {w,d}=S.garden; const W=S.garden.walls;
   if(groundMesh) scene.remove(groundMesh);
   groundMesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshStandardMaterial({color:0x8aa66a,roughness:1}));
   groundMesh.rotation.x=-Math.PI/2; groundMesh.receiveShadow=true; scene.add(groundMesh);
@@ -567,9 +619,9 @@ function buildGarden(){
   gridHelper=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)),0x4a5a48,0x4a5a48);
   gridHelper.material.opacity=0.35; gridHelper.material.transparent=true; gridHelper.position.y=0.01; scene.add(gridHelper);
   if(wallsGroup) scene.remove(wallsGroup); wallsGroup=new THREE.Group();
-  if(wallH>0.01){ const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide}); const th=0.08;
-    const mk=(bw,bd,x,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(bw,wallH,bd),wMat);m.position.set(x,wallH/2,z);m.castShadow=true;m.receiveShadow=true;wallsGroup.add(m);};
-    mk(w,th,0,-d/2);mk(w,th,0,d/2);mk(th,d,-w/2,0);mk(th,d,w/2,0); }
+  const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide}); const th=0.08;
+  const mk=(bw,bd,x,z,h)=>{ if(!(h>0.01)) return; const m=new THREE.Mesh(new THREE.BoxGeometry(bw,h,bd),wMat); m.position.set(x,h/2,z); m.castShadow=true; m.receiveShadow=true; wallsGroup.add(m); };
+  mk(w,th,0,-d/2, W.yt); mk(w,th,0, d/2, W.y0); mk(th,d,-w/2,0, W.xb); mk(th,d, w/2,0, W.x0);
   scene.add(wallsGroup);
   const half=Math.max(w,d)*0.85+6; const c=sun.shadow.camera; c.left=-half;c.right=half;c.top=half;c.bottom=-half;c.near=0.5;c.far=200;c.updateProjectionMatrix();
   northArrow.setLength(Math.max(w,d)/2.4,0.8,0.45);
@@ -584,9 +636,14 @@ function buildPoles(){
 }
 function buildSails(){
   S.sails.forEach((s,si)=>{ const mesh=sailMeshes[si]; if(!s.on){ mesh.visible=false; return; } mesh.visible=true;
-    const c=sailCorners(s); let pos;
-    if(s.shape===3) pos=new Float32Array([c[0].x,c[0].y,c[0].z,c[1].x,c[1].y,c[1].z,c[2].x,c[2].y,c[2].z]);
-    else pos=new Float32Array([c[0].x,c[0].y,c[0].z,c[1].x,c[1].y,c[1].z,c[2].x,c[2].y,c[2].z, c[0].x,c[0].y,c[0].z,c[2].x,c[2].y,c[2].z,c[3].x,c[3].y,c[3].z]);
+    const surf=sailSurface(s); let pos;
+    if(s.shape===3){ const c=sailLocalCorners(s).map(v=>surf.lift(v.x,v.z));
+      pos=new Float32Array([c[0].x,c[0].y,c[0].z, c[1].x,c[1].y,c[1].z, c[2].x,c[2].y,c[2].z]); }
+    else { const w=s.bw,l=s.bl,N=6,tris=[];
+      const P=(i,j)=>surf.lift(-w/2+w*i/N, -l/2+l*j/N);
+      for(let i=0;i<N;i++) for(let j=0;j<N;j++){ const a=P(i,j),b=P(i+1,j),cc=P(i+1,j+1),d=P(i,j+1);
+        tris.push(a,b,cc, a,cc,d); }
+      pos=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{pos[idx*3]=p.x;pos[idx*3+1]=p.y;pos[idx*3+2]=p.z;}); }
     const g=mesh.geometry; g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.computeVertexNormals(); g.computeBoundingSphere();
     mesh.material.color.set(s.color); mesh.material.opacity=s.opacity;
   });
@@ -595,17 +652,58 @@ function buildRopes(){
   ropesGroup.clear(); const mat=new THREE.LineBasicMaterial({color:0x2a2f36});
   S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s); c.forEach((corner,k)=>{ const top=poleTop(s.posts[k]); ropesGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([corner,top]),mat)); }); });
 }
-function makeTable(f){ const tw=f.tw||1.1,tl=f.tl||0.7,th=f.th||0.74; const g=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x9c6b3f,roughness:0.8});
-  const top=new THREE.Mesh(new THREE.BoxGeometry(tw,0.05,tl),wood); top.position.y=th; top.castShadow=true; top.receiveShadow=true; g.add(top);
+function makeTable(f){ const tw=f.tw||1.1,tl=f.tl||0.7,ht=f.th||0.74; const g=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x9c6b3f,roughness:0.8});
+  const ox=tw/2, oz=tl/2;
+  const top=new THREE.Mesh(new THREE.BoxGeometry(tw,0.05,tl),wood); top.position.set(ox,ht,oz); top.castShadow=true; top.receiveShadow=true; g.add(top);
   const lx=Math.max(0.05,tw/2-0.06),lz=Math.max(0.05,tl/2-0.06);
-  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,th,10),wood);leg.position.set(x,th/2,z);leg.castShadow=true;g.add(leg);}); return g; }
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,ht,10),wood);leg.position.set(ox+x,ht/2,oz+z);leg.castShadow=true;g.add(leg);}); return g; }
 function makeChair(){ const g=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:0x556070,roughness:0.85});
   const seat=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.05,0.45),m); seat.position.y=0.45; seat.castShadow=true; g.add(seat);
   const back=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.45,0.05),m); back.position.set(0,0.67,-0.2); back.castShadow=true; g.add(back);
   [[-0.18,-0.18],[0.18,-0.18],[0.18,0.18],[-0.18,0.18]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.45,8),m);leg.position.set(x,0.225,z);leg.castShadow=true;g.add(leg);}); return g; }
-function buildFurniture(){ furnGroup.clear(); const B=refWorld();
-  [['table',makeTable],['chair1',makeChair],['chair2',makeChair]].forEach(([key,maker])=>{ const f=S.furniture[key]; if(!f.on) return;
-    const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; furnGroup.add(obj); }); }
+function makePergola(f){ const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.6,metalness:0.25});
+  const ox=pw/2, oz=pl/2;
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(pw,0.08,pl),mat); roof.position.set(ox,ph,oz); roof.castShadow=true; roof.receiveShadow=true; g.add(roof);
+  const lx=Math.max(0.06,pw/2-0.08),lz=Math.max(0.06,pl/2-0.08);
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,ph,0.08),mat);leg.position.set(ox+x,ph/2,oz+z);leg.castShadow=true;g.add(leg);});
+  g.userData.shadeMesh=roof; return g; }
+function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld();
+  [['table',makeTable],['chair1',makeChair],['chair2',makeChair],['pergola',makePergola]].forEach(([key,maker])=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+    const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; obj.userData.furnKey=key; furnGroup.add(obj);
+    if(key==='pergola') pergolaRoof=obj.userData.shadeMesh; });
+  furnGroup.updateMatrixWorld(true); }
+
+/* ---- Labels ---- */
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function makeTextSprite(lines,hex){
+  const fs=20,lh=24,pad=10; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+  const font=`600 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`; ctx.font=font;
+  const w=Math.ceil(Math.max(...lines.map(l=>ctx.measureText(l).width)))+pad*2;
+  const h=lines.length*lh+pad*2; canvas.width=w; canvas.height=h;
+  ctx.font=font; ctx.textBaseline='top';
+  ctx.fillStyle='rgba(17,22,28,0.85)'; roundRect(ctx,0,0,w,h,9); ctx.fill();
+  ctx.strokeStyle=hex; ctx.lineWidth=2; roundRect(ctx,1,1,w-2,h-2,8); ctx.stroke();
+  lines.forEach((l,i)=>{ ctx.fillStyle=i===0?hex:'#d3dde7'; ctx.fillText(l,pad,pad+i*lh); });
+  const tex=new THREE.CanvasTexture(canvas); tex.anisotropy=4;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+  const sc=0.004; spr.scale.set(w*sc,h*sc,1); spr.renderOrder=999; return spr;
+}
+function buildLabels(){
+  labelsGroup.clear(); refMarker.visible=true; if(!S.showLabels) return;
+  S.points.forEach((p,i)=>{ const top=poleTop(i);
+    const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`,`H ${fmt(p.h)} m`],POST_HEX[i]);
+    spr.position.set(top.x,top.y+0.55,top.z); labelsGroup.add(spr); });
+  const B=refWorld();
+  const furnLabel=(key,name,hex,topY,dims,hx,hz)=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+    const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);
+    const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
+    const spr=makeTextSprite([name,`${t('lbl-corner-ecke')} X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],hex);
+    spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr); };
+  const tab=S.furniture.table, pg=S.furniture.pergola;
+  if(tab) furnLabel('table',t('furn-table'),'#d9a066',(tab.th||0.74),`B ${fmt(tab.tw)} · L ${fmt(tab.tl)} · H ${fmt(tab.th)} m`,(tab.tw||1.1)/2,(tab.tl||0.7)/2);
+  if(pg) furnLabel('pergola',t('furn-pergola'),'#aab3bd',(pg.ph||2.2),`B ${fmt(pg.pw)} · L ${fmt(pg.pl)} · H ${fmt(pg.ph)} m`,(pg.pw||3)/2,(pg.pl||3)/2);
+}
 
 function updateSun(){
   const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(S.timeMin);
@@ -636,18 +734,58 @@ function updateShadow(day){
       const loop=[...proj,proj[0]].map(p=>new THREE.Vector3(p.x,0.025,p.z)); shadowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop),new THREE.LineBasicMaterial({color:0x10161d}))); }
     activeMeshes.push(sailMeshes[si]);
   });
+  const blockers=[...activeMeshes]; if(pergolaRoof) blockers.push(pergolaRoof);
   const B=refWorld();
-  const probe={ table:[B.x+S.furniture.table.x,(S.furniture.table.th||0.74),B.z+S.furniture.table.y], chair1:[B.x+S.furniture.chair1.x,0.45,B.z+S.furniture.chair1.y], chair2:[B.x+S.furniture.chair2.x,0.45,B.z+S.furniture.chair2.y] };
-  const furnKeys={table:t('furn-table'),chair1:t('furn-chair1'),chair2:t('furn-chair2')};
+  const T=S.furniture.table; const tyr=(T.yaw||0)*DEG, thx=(T.tw||1.1)/2, thz=(T.tl||0.7)/2;
+  const tcx=B.x+T.x + thx*Math.cos(tyr) - thz*Math.sin(tyr), tcz=B.z+T.y + thx*Math.sin(tyr) + thz*Math.cos(tyr);
+  const probe={ table:[tcx,(T.th||0.74),tcz], chair1:[B.x+S.furniture.chair1.x,0.45,B.z+S.furniture.chair1.y], chair2:[B.x+S.furniture.chair2.x,0.45,B.z+S.furniture.chair2.y] };
+  const furnNames={table:t('furn-table'),chair1:t('furn-chair1'),chair2:t('furn-chair2')};
   Object.keys(probe).forEach(k=>{ if(!S.furniture[k].on) return; raycaster.set(new THREE.Vector3(...probe[k]),sunDir);
-    const shaded=activeMeshes.length>0 && raycaster.intersectObjects(activeMeshes,false).length>0;
-    html+=`${furnKeys[k]}: <b>${shaded?t('shadow-shaded'):t('shadow-sun')}</b><br>`; });
+    const shaded=blockers.length>0 && raycaster.intersectObjects(blockers,false).length>0;
+    html+=`${furnNames[k]}: <b>${shaded?t('shadow-shaded'):t('shadow-sun')}</b><br>`; });
   out.innerHTML=html||t('shadow-none');
 }
-function updateRef(){ refMarker.position.copy(refWorld()); const B=refWorld(); document.getElementById('refWorld').textContent=`${t('world-coord')}: X ${B.x.toFixed(2)} · Y ${B.z.toFixed(2)} · Z ${B.y.toFixed(2)}`; }
-function updateRig(){ buildPoles(); buildSails(); buildRopes(); }
+
+/* ---- Tagesauswertung ---- */
+const ROUND=n=>Math.round(n*100)/100;
+function sunDirAtMin(min){
+  const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(min);
+  const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
+  const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
+  return { dir, alt };
+}
+function sailGroundArea(s,dir){
+  if(dir.y<=0.02) return 0;
+  const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(dir,-(P.y/dir.y)));
+  let area=0; for(let i=0;i<proj.length;i++){ const a=proj[i],b=proj[(i+1)%proj.length]; area+=a.x*b.z-b.x*a.z; }
+  return Math.abs(area)/2;
+}
+function computeDayShade(){
+  const start=600,end=1080,step=15, hours=(end-start)/60;
+  const sums=S.sails.map(()=>0);
+  for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1; const dayOk=alt>0&&dir.y>0.02;
+    S.sails.forEach((s,si)=>{ if(s.on && dayOk) sums[si]+=sailGroundArea(s,dir)*wgt; }); }
+  const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, perSail:[], total_m2h:0, total_avg_m2:0 };
+  S.sails.forEach((s,si)=>{ if(!s.on) return; const integral=sums[si]*step/60, avg=integral/hours;
+    res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg) });
+    res.total_m2h+=integral; res.total_avg_m2+=avg; });
+  res.total_m2h=ROUND(res.total_m2h); res.total_avg_m2=ROUND(res.total_avg_m2);
+  return res;
+}
+function renderDayShade(){
+  const r=computeDayShade(); S.shadeAnalysis=r;
+  const out=document.getElementById('dayShade'); if(!out) return;
+  if(!r.perSail.length){ out.innerHTML=t('dayshade-none'); return; }
+  let html=`<span style="color:var(--muted)">${r.date} · 10–18h</span><br>`;
+  r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
+  if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
+  out.innerHTML=html;
+}
+
+function updateRef(){ refMarker.position.copy(refWorld()); }
+function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); updateSun(); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); updateSun(); renderDayShade(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
@@ -658,11 +796,14 @@ function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return
 /* ---- UI ---- */
 const $=id=>document.getElementById(id);
 const fmt=(n,d=1)=>Number(n).toFixed(d).replace('.',',');
-
 function link(card,cls,lo,hi,apply){
   const sl=card.querySelector('.'+cls), nu=card.querySelector('.'+cls+'n');
   const set=v=>{ v=+v; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=v; apply(v); touch(); };
   sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
+}
+function bindNum(card,cls,lo,hi,apply){
+  const el=card.querySelector('.'+cls); if(!el) return;
+  el.onchange=()=>{ let v=+el.value; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); el.value=v; apply(v); updateAll(); touch(); };
 }
 function linkId(slId,numId,lo,hi,apply){
   const sl=$(slId),nu=$(numId);
@@ -676,22 +817,29 @@ function rowHTML(label,cls,min,max,step,val,unit,def){
     `<input type="number" class="num ${cls}n" min="${min}" max="${max}" step="${step}" value="${val}">`+
     (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
 }
+function numRowHTML(label,cls,val,unit){
+  return `<div class="row"><label>${label}</label>`+
+    `<input type="number" class="num ${cls}" style="width:auto;flex:1" min="0.5" max="20" step="0.1" value="${val}">`+
+    (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
+}
 
 function wireStaticUI(){
   $('gw').value=S.garden.w; $('gw').dataset.default=DEF.garden.w; linkId('gw','gwn',3,30,v=>{S.garden.w=v;buildGarden();updateAll();});
   $('gd').value=S.garden.d; $('gd').dataset.default=DEF.garden.d; linkId('gd','gdn',3,30,v=>{S.garden.d=v;buildGarden();updateAll();});
-  $('wh').value=S.garden.wallH; $('wh').dataset.default=DEF.garden.wallH; linkId('wh','whn',0,4,v=>{S.garden.wallH=v;buildGarden();});
-  $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();});
-  $('refCorner').value=S.ref.corner; $('refCorner').onchange=e=>{S.ref.corner=+e.target.value; updateAll(); touch();};
-  $('rox').value=S.ref.ox; $('rox').oninput=e=>{S.ref.ox=+e.target.value;updateAll();touch();};
-  $('roy').value=S.ref.oy; $('roy').oninput=e=>{S.ref.oy=+e.target.value;updateAll();touch();};
-  $('roz').value=S.ref.oz; $('roz').oninput=e=>{S.ref.oz=+e.target.value;updateAll();touch();};
-  $('lat').value=S.loc.lat; $('lat').oninput=e=>{S.loc.lat=+e.target.value;updateSun();touch();};
-  $('lon').value=S.loc.lon; $('lon').oninput=e=>{S.loc.lon=+e.target.value;updateSun();touch();};
-  $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();touch();};
+  const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,4,v=>{S.garden.walls[key]=v;buildGarden();}); };
+  wallRow('wx0','wx0n','x0'); wallRow('wxb','wxbn','xb'); wallRow('wy0','wy0n','y0'); wallRow('wyt','wytn','yt');
+  $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
+  const syncCity=()=>{ $('city').value=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; if(!$('city').value||$('city').selectedIndex<0) $('city').value='manual'; };
+  $('city').onchange=e=>{ if(e.target.value==='manual') return; const [la,lo]=e.target.value.split(',').map(Number);
+    S.loc.lat=la; S.loc.lon=lo; $('lat').value=la; $('lon').value=lo; updateSun(); renderDayShade(); touch(); };
+  $('lat').value=S.loc.lat; $('lat').oninput=e=>{S.loc.lat=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
+  $('lon').value=S.loc.lon; $('lon').oninput=e=>{S.loc.lon=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
+  syncCity();
+  $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();renderDayShade();touch();};
   $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
   $('time').oninput=e=>{S.timeMin=+e.target.value; setTimeInputs(); updateSun(); touch();};
   $('timeInput').onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
+  const sl=$('showLabels'); sl.checked=S.showLabels; sl.onchange=()=>{ S.showLabels=sl.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
 }
 function setTimeInputs(){ const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0'); $('timeInput').value=`${hh}:${mm}`; }
@@ -706,18 +854,8 @@ function buildPointEditors(){
   S.points.forEach((p,i)=>{
     const D=DEF.points[i]; const card=document.createElement('div'); card.className='card';
     card.innerHTML=`<h3><span><span class="dot" style="background:${POST_HEX[i]}"></span>${t('post-label')} ${i+1}</span></h3>
-      <div class="seg"><button data-m="xyz" class="${p.mode==='xyz'?'active':''}">${t('mode-direct')}</button><button data-m="polar" class="${p.mode==='polar'?'active':''}">${t('mode-polar')}</button></div>
-      <div class="bodyXYZ" style="${p.mode==='xyz'?'':'display:none'}">
-        ${rowHTML(t('lbl-x'),'rx',-15,15,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'ry',-15,15,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-height'),'rh',0.3,6,0.1,p.h,'m',D.h)}
-      </div>
-      <div class="bodyPOLAR" style="${p.mode==='polar'?'':'display:none'}">
-        ${rowHTML(t('lbl-dist'),'rd',0,30,0.01,p.dist,'m')}${rowHTML(t('lbl-ha'),'rha',-180,360,1,p.ha,'°')}${rowHTML(t('lbl-va'),'rva',-90,90,1,p.va,'°')}
-      </div>`;
-    card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ p.mode=b.dataset.m;
-      card.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('active',x.dataset.m===p.mode));
-      card.querySelector('.bodyXYZ').style.display=p.mode==='xyz'?'':'none'; card.querySelector('.bodyPOLAR').style.display=p.mode==='polar'?'':'none'; updateAll(); touch(); });
+      ${rowHTML(t('lbl-x'),'rx',-15,15,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'ry',-15,15,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-height'),'rh',0.3,6,0.1,p.h,'m',D.h)}`;
     link(card,'rx',-15,15,v=>{p.x=v;updateAll();}); link(card,'ry',-15,15,v=>{p.y=v;updateAll();}); link(card,'rh',0.3,6,v=>{p.h=v;updateAll();});
-    link(card,'rd',0,30,v=>{p.dist=v;updateAll();}); link(card,'rha',-180,360,v=>{p.ha=v;updateAll();}); link(card,'rva',-90,90,v=>{p.va=v;updateAll();});
     host.appendChild(card);
   });
 }
@@ -728,24 +866,24 @@ function rotateSail(s,dir){ if(dir>0) s.posts.unshift(s.posts.pop()); else s.pos
 function buildSailEditors(){
   const host=$('sails'); host.innerHTML='';
   S.sails.forEach((s,si)=>{
-    const D=DEF.sails[si]; const card=document.createElement('div'); card.className='card';
+    const card=document.createElement('div'); card.className='card';
     const sizeHtml = s.shape===3
-      ? rowHTML(t('lbl-side-a'),'sa',1,12,0.1,s.a,'m',D.a)+rowHTML(t('lbl-side-b'),'sb',1,12,0.1,s.b,'m',D.b)+rowHTML(t('lbl-side-c'),'sc',1,12,0.1,s.c,'m',D.c)
-      : rowHTML(t('lbl-bw'),'bw',1,12,0.1,s.bw,'m',D.bw)+rowHTML(t('lbl-bl'),'bl',1,12,0.1,s.bl,'m',D.bl);
+      ? numRowHTML(t('lbl-side-a'),'sa',s.a,'m')+numRowHTML(t('lbl-side-b'),'sb',s.b,'m')+numRowHTML(t('lbl-side-c'),'sc',s.c,'m')
+      : numRowHTML(t('lbl-bw'),'bw',s.bw,'m')+numRowHTML(t('lbl-bl'),'bl',s.bl,'m');
     let cornersHtml=''; for(let k=0;k<s.shape;k++) cornersHtml+=`<div class="row"><label>${t('lbl-corner-n')} ${k+1}</label><select class="ps" data-k="${k}">${postOptions(s.posts[k])}</select><span class="val rl" data-si="${si}" data-k="${k}">– m</span></div>`;
     card.innerHTML=`<h3>${t('sail-label')} ${si+1}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${s.on?'checked':''}> ${t('lbl-active')}</label></h3>
       <div class="seg"><button data-n="3" class="${s.shape===3?'active':''}">${t('lbl-3corners')}</button><button data-n="4" class="${s.shape===4?'active':''}">${t('lbl-4corners')}</button></div>
       ${sizeHtml}${cornersHtml}
-      <div class="row"><label>${t('lbl-rotate')}</label><button class="minib rotL" title="${t('rot-ccw')}">⟲</button><button class="minib rotR" title="${t('rot-cw')}">⟳</button><button class="minib ctr" title="${t('center-reset')}">${t('lbl-center')}</button></div>
+      <div class="row"><label>${t('lbl-rotate')}</label><button class="minib rotL" title="${t('rot-ccw')}">⟲</button><button class="minib rotR" title="${t('rot-cw')}">⟳</button><button class="minib ctr" title="${t('center-tip')}">${t('lbl-center')}</button></div>
       <div class="row"><label>${t('lbl-color')}</label><input class="scol" type="color" value="${s.color}"></div>
       ${rowHTML(t('lbl-opacity'),'so',0.3,1,0.05,s.opacity,'',1)}
-      <p class="hint" style="margin:6px 0 0">${t('hint-sail-drag')}</p>`;
+      <p class="hint" style="margin:6px 0 0">${t('hint-sail-note')}</p>`;
     const q=sel=>card.querySelector(sel);
     q('.on').onchange=e=>{ s.on=e.target.checked; updateAll(); touch(); };
     card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ const n=+b.dataset.n; if(n===s.shape) return;
       s.shape=n; s.posts=s.posts.slice(0,n); while(s.posts.length<n) s.posts.push(nextFreePost(s)); buildSailEditors(); updateAll(); touch(); });
-    if(s.shape===3){ link(card,'sa',1,12,v=>{s.a=v;updateAll();}); link(card,'sb',1,12,v=>{s.b=v;updateAll();}); link(card,'sc',1,12,v=>{s.c=v;updateAll();}); }
-    else { link(card,'bw',1,12,v=>{s.bw=v;updateAll();}); link(card,'bl',1,12,v=>{s.bl=v;updateAll();}); }
+    if(s.shape===3){ bindNum(card,'sa',0.5,20,v=>s.a=v); bindNum(card,'sb',0.5,20,v=>s.b=v); bindNum(card,'sc',0.5,20,v=>s.c=v); }
+    else { bindNum(card,'bw',0.5,20,v=>s.bw=v); bindNum(card,'bl',0.5,20,v=>s.bl=v); }
     card.querySelectorAll('.ps').forEach(sel=>sel.onchange=e=>{ s.posts[+sel.dataset.k]=+e.target.value; updateAll(); touch(); });
     q('.rotL').onclick=()=>{ rotateSail(s,-1); buildSailEditors(); updateAll(); touch(); };
     q('.rotR').onclick=()=>{ rotateSail(s, 1); buildSailEditors(); updateAll(); touch(); };
@@ -758,24 +896,34 @@ function buildSailEditors(){
 
 function buildFurnitureEditors(){
   const host=$('furniture'); host.innerHTML='';
-  const labels={table:t('furn-table'),chair1:t('furn-chair1'),chair2:t('furn-chair2')};
-  Object.keys(S.furniture).forEach(key=>{
-    const f=S.furniture[key]; const D=DEF.furniture[key]; const card=document.createElement('div'); card.className='card';
-    let sizeHtml=''; if(key==='table') sizeHtml=rowHTML(t('lbl-bw'),'tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML(t('lbl-bl'),'tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML(t('lbl-height'),'th',0.4,1.1,0.01,f.th,'m',D.th);
+  const labels={table:t('furn-table'),chair1:t('furn-chair1'),chair2:t('furn-chair2'),pergola:t('furn-pergola')};
+  ['table','chair1','chair2','pergola'].forEach(key=>{
+    const f=S.furniture[key]; if(!f) return; const D=DEF.furniture[key]; const card=document.createElement('div'); card.className='card'; card.dataset.fkey=key;
+    let sizeHtml='';
+    if(key==='table') sizeHtml=rowHTML(t('lbl-bw'),'tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML(t('lbl-bl'),'tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML(t('lbl-height'),'th',0.4,1.1,0.01,f.th,'m',D.th);
+    if(key==='pergola') sizeHtml=rowHTML(t('lbl-bw'),'pw',1,6,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,6,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-height'),'ph',1.8,3,0.05,f.ph,'m',D.ph);
     card.innerHTML=`<h3>${labels[key]}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${f.on?'checked':''}> ${t('lbl-visible')}</label></h3>
       ${rowHTML(t('lbl-x'),'fx',-15,15,0.1,f.x,'m',D.x)}${rowHTML(t('lbl-y'),'fy',-15,15,0.1,f.y,'m',D.y)}${rowHTML(t('lbl-yaw'),'fyaw',-180,180,1,f.yaw,'°',D.yaw)}${sizeHtml}`;
     const q=s=>card.querySelector(s);
     q('.on').onchange=e=>{f.on=e.target.checked; buildFurniture(); updateSun(); touch();};
     link(card,'fx',-15,15,v=>{f.x=v;buildFurniture();updateSun();}); link(card,'fy',-15,15,v=>{f.y=v;buildFurniture();updateSun();}); link(card,'fyaw',-180,180,v=>{f.yaw=v;buildFurniture();});
     if(key==='table'){ link(card,'tw',0.5,3,v=>{f.tw=v;buildFurniture();updateSun();}); link(card,'tl',0.5,3,v=>{f.tl=v;buildFurniture();updateSun();}); link(card,'th',0.4,1.1,v=>{f.th=v;buildFurniture();updateSun();}); }
+    if(key==='pergola'){ link(card,'pw',1,6,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,6,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();}); }
     host.appendChild(card);
   });
 }
+function syncFurnitureInputs(key){ const card=document.querySelector(`#furniture .card[data-fkey="${key}"]`); if(!card) return; const f=S.furniture[key];
+  const fx=card.querySelector('.fx'),fxn=card.querySelector('.fxn'),fy=card.querySelector('.fy'),fyn=card.querySelector('.fyn');
+  if(fx){ fx.value=f.x.toFixed(1); fxn.value=f.x.toFixed(1); } if(fy){ fy.value=f.y.toFixed(1); fyn.value=f.y.toFixed(1); } }
 
-$('btnExport').onclick=()=>{ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='shade-sail-setup.json'; a.click(); URL.revokeObjectURL(a.href); };
+$('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  a.download=`shade-sail-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}.json`;
+  a.click(); URL.revokeObjectURL(a.href); };
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=Object.assign(defaultState(),obj); refreshUI(); saveState(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
+  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
   r.readAsText(file); e.target.value=''; };
 $('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); } };
 
@@ -785,16 +933,26 @@ function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.se
 window.addEventListener('resize',onResize);
 function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
 
+/* ---- Maus-Drag ---- */
 let drag=null;
 function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
+function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
 function onPointerDown(e){ if(e.button!==0) return; raycaster.setFromCamera(ndc(e),camera);
-  const meshes=sailMeshes.filter(m=>m.visible); const hits=raycaster.intersectObjects(meshes,false);
-  if(hits.length){ drag={ si:sailMeshes.indexOf(hits[0].object), y:hits[0].point.y, last:hits[0].point.clone() }; controls.enabled=false; } }
-function onPointerMove(e){ if(!drag) return; raycaster.setFromCamera(ndc(e),camera);
-  const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-drag.y); const pt=new THREE.Vector3();
-  if(raycaster.ray.intersectPlane(plane,pt)){ const s=S.sails[drag.si]; s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
-    buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
-function onPointerUp(){ if(drag){ drag=null; controls.enabled=true; } }
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; const pt=groundPoint(e,0);
+    if(o && pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; } }
+}
+function onPointerMove(e){ if(!drag) return;
+  if(drag.type==='sail'){ const pt=groundPoint(e,drag.y); if(pt){ const s=S.sails[drag.si];
+      s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
+      const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;
+      buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
+  else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
+      buildFurniture(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
+}
+function onPointerUp(){ if(!drag) return; drag=null; controls.enabled=true; }
 renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
 window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
 
