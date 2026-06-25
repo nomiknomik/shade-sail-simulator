@@ -1,102 +1,102 @@
-# Sonnensegel-Simulator – Projektstand für Weiterarbeit
+# Shade Sail Simulator – Project Status for Continued Development
 
-## Was ist das?
-Standalone-Webanwendung (`index.html`) — kein Build, kein Server nötig,
-per Doppelklick in Chrome/Safari öffnen (Internet für CDN-Libs nötig).
+## What is this?
+Standalone web application (`index.html`) — no build step, no server required.
+Open with a double-click in Chrome/Safari (internet connection needed for CDN libraries).
 
-## Technischer Stack
-- **Three.js 0.160** (3D-Rendering, Schattenwurf via DirectionalLight + ShadowMap)
-- **SunCalc 1.9** (Sonnenstand aus Standort/Datum/Uhrzeit)
-- **Vanilla JS, ES-Module** (kein Framework, kein Build-Tool)
-- Speicherung: **localStorage** (Schlüssel `sonnensegel-v7`) + Cookie (Fallback)
-- Export/Import als JSON-Datei
+## Tech Stack
+- **Three.js 0.160** (3D rendering, shadow casting via DirectionalLight + ShadowMap)
+- **SunCalc 1.9** (sun position from location/date/time)
+- **Vanilla JS, ES modules** (no framework, no build tool)
+- Storage: **localStorage** (key `sonnensegel-v7`) + cookie (fallback)
+- Export/import as JSON file
 
-## Aktuelle Version: 3.6 (Datei: index.html)
+## Current Version: 3.6 (file: index.html)
 
-## Versionsverlauf (Kurz)
-- **3.3** – Ausgangsstand: Laser-/Polar-Eingabe, frei wählbarer Bezugspunkt, Best-Fit-Aufspannung
-- **3.4** – Laser entfernt; Bezugspunkt fix (Ecke 3); Pfosten-Labels (Checkbox); Segelmaße als Zahleneingabe; Pergola; Möbel per Maus verschiebbar; Starrkörper-Best-Fit korrigiert
-- **3.5** – Neues Segel-Modell: schwimmt in der Pfosten-Spannfläche, feste Maße, Maus-Positionierung mit Begrenzung, Seile = kürzeste Verbindung, gebogene Fläche (Hypar) bei 4 Pfosten; Möbel-Labels (Tisch/Pergola)
-- **3.6** – Vier getrennte Wandhöhen; Eck-Drehpunkt für Tisch & Pergola; Ort-Auswahlliste; Export-Dateiname mit Zeitstempel; Tagesauswertung Schattenfläche 10–18 Uhr (m²·h, auch im Export)
+## Version History (Summary)
+- **3.3** – Baseline: laser/polar input, freely selectable reference point, best-fit sail orientation
+- **3.4** – Removed laser input; fixed reference point (corner 3); post labels (checkbox); sail dimensions as number inputs; pergola; furniture draggable with mouse; rigid-body best-fit corrected
+- **3.5** – New sail model: floats within the post span surface, fixed dimensions, mouse positioning with boundary clamping, ropes = shortest connection, curved surface (hypar) for 4 posts; furniture labels (table/pergola)
+- **3.6** – Four separate wall heights; corner pivot for table & pergola; location preset list; export filename with timestamp; daily shade analysis 10–18 h (m²·h, included in export)
 
-## Umgesetzte Features (Stand 3.6)
+## Implemented Features (as of v3.6)
 
-### Garten
-- Breite × Tiefe (Default 9,5 × 9,5 m), Nordrichtungs-Regler (Default 229°)
-- **4 Wände mit je eigener Höhe** (`S.garden.walls = {x0, xb, y0, yt}`), jede wirft Schatten, 0 m = keine Wand
-  - Benennung nach X/Y-Bezugspunkt: x0/y0 = Wände an Bezugsecke, xb/yt = gegenüber
-- Standort editierbar + **Ort-Auswahlliste** (Bad Säckingen, Freudenstadt, Karlsruhe, München, Baden-Baden)
+### Garden
+- Width × depth (default 9.5 × 9.5 m), north direction control (default 229°)
+- **4 walls with individual heights** (`S.garden.walls = {x0, xb, y0, yt}`), each casts shadows, 0 m = no wall
+  - Named by X/Y reference: x0/y0 = walls at reference corner, xb/yt = opposite walls
+- Location editable + **location preset list** (Bad Säckingen, Freudenstadt, Karlsruhe, Munich, Baden-Baden)
 
-### Bezugspunkt
-- Fix auf Ecke 3 (+X/+Y), Versatz 0/0/0; cyan-Marker im 3D
+### Reference Point
+- Fixed at corner 3 (+X/+Y), offset 0/0/0; cyan marker in 3D view
 
-### 6 Pfosten
-- Rot/Orange/Gelb/Grün/Blau/Violett; Eingabe X/Y (relativ Bezugspunkt) + Höhe (absolut)
-- Optionale 3D-Beschriftung (Checkbox `showLabels`): Nummer, X/Y, Höhe
+### 6 Posts
+- Red/Orange/Yellow/Green/Blue/Violet; input: X/Y (relative to reference) + height (absolute)
+- Optional 3D labels (checkbox `showLabels`): number, X/Y, height
 
-### 2 Segel (Spannflächen-Modell)
-- 3 oder 4 Ecken, **feste Maße** (Zahleneingabe)
-- Schwimmt in der von den zugeordneten Pfosten gebildeten Fläche:
-  - Ausrichtung per 2D-Best-Fit (`bestAngle2D`), jede Ecke zeigt zu ihrem Pfosten
-  - Position per Maus (Drag-Offset `s.dx/s.dz`), auf die Pfosten-Begrenzung geklemmt (`pointInPoly`, Binärsuche)
-  - Eckenhöhe folgt der Pfostenfläche (`surfaceHeight`): 3 Pfosten = Ebene (baryzentrisch), 4 Pfosten = bilineare/gebogene Fläche (Newton-Inversion, Hypar-Tesselierung 6×6)
-  - Seillänge = kürzeste Verbindung Ecke→Pfosten (berechnete Ausgabe)
-- ⟲/⟳ rotiert die Ecken-Pfosten-Zuordnung, „Mitte" zentriert; Farbe + Deckkraft
+### 2 Sails (Span Surface Model)
+- 3 or 4 corners, **fixed dimensions** (number input)
+- Floats within the surface defined by the assigned posts:
+  - Orientation via 2D best-fit (`bestAngle2D`), each corner points toward its post
+  - Position via mouse (drag offset `s.dx/s.dz`), clamped to post boundary (`pointInPoly`, binary search)
+  - Corner height follows the post surface (`surfaceHeight`): 3 posts = plane (barycentric), 4 posts = bilinear/curved surface (Newton inversion, hypar tessellation 6×6)
+  - Rope length = shortest connection corner→post (calculated output)
+- ⟲/⟳ rotates corner-post assignment, "Center" recenters; color + opacity
 
-### Sonne & Schatten
-- Sonnenstand live aus SunCalc; echter Schattenwurf (ShadowMap)
-- Schattenfläche am Boden je Segel (Polygon + m²)
-- Möbel-Schattentest (Tisch/Stühle), Pergola-Dach als zusätzlicher Blocker
-- Tag abspielen / Jetzt; Tag/Nacht-Wechsel; HUD unten links
+### Sun & Shadow
+- Live sun position from SunCalc; real shadow casting (ShadowMap)
+- Ground shadow area per sail (polygon + m²)
+- Furniture shade test (table/chairs), pergola roof as additional blocker
+- Play day / Now; day/night transition; HUD bottom-left
 
-### Tagesauswertung (Punkt v3.6)
-- `computeDayShade()` integriert die Bodenschattenfläche je aktivem Segel über 10:00–18:00 (Trapezregel, 15-min-Takt) → **m²·h** + Ø in m²
-- Anzeige im Panel „Tagesauswertung" (`renderDayShade`), Ergebnis in `S.shadeAnalysis`
-- Wird in `updateAll()` aktualisiert und beim Export frisch berechnet
-- Gesamt = Summe der Einzelsegel (Überlappung doppelt gezählt)
+### Daily Shade Analysis (v3.6)
+- `computeDayShade()` integrates ground shadow area per active sail over 10:00–18:00 (trapezoidal rule, 15-min intervals) → **m²·h** + average in m²
+- Displayed in the "Daily Analysis" panel section (`renderDayShade`), result stored in `S.shadeAnalysis`
+- Updated in `updateAll()` and recalculated fresh on export
+- Total = sum of individual sails (overlaps counted twice)
 
-### Möbel
-- Tisch (B/L/H), 2 Stühle, Pergola (B/L/H)
-- Position X/Y, Drehung, sichtbar/unsichtbar; alle werfen Schatten
-- **Im 3D mit der Maus verschiebbar**
-- **Tisch & Pergola: Eck-Drehpunkt** — Geometrie so verschoben, dass eine Ecke im Gruppen-Ursprung liegt; X/Y = diese Ecke (= Drehpunkt). Stühle: Mitten-Drehpunkt
-- Labels (bei `showLabels`) für Pfosten, Tisch, Pergola; Tisch-/Pergola-Label sitzen über der Objektmitte
+### Furniture
+- Table (W/L/H), 2 chairs, pergola (W/L/H)
+- X/Y position, rotation, show/hide; all cast shadows
+- **Draggable in 3D with mouse**
+- **Table & pergola: corner pivot** — geometry shifted so one corner sits at the group origin; X/Y = this corner (= pivot point). Chairs: center pivot
+- Labels (when `showLabels` active) for posts, table, pergola; table/pergola labels positioned above object center
 
-### UI / Persistenz
-- Schieber + Zahlenfeld bidirektional; Doppelklick = Default
-- Export → `sonnensegel-setup_JJJJ-MM-TT_hhmm.json` (Zeitstempel); Import + `migrate()`; Reset
-- Auto-Speichern (localStorage + Cookie)
+### UI / Persistence
+- Slider + number field bidirectional; double-click = reset to default
+- Export → `sonnensegel-setup_YYYY-MM-DD_hhmm.json` (timestamp); import + `migrate()`; reset
+- Auto-save (localStorage + cookie)
 
 ## Migration (`migrate`)
-Bringt alte Stände aufs aktuelle Schema:
-- alte einzelne `garden.wallH` → alle vier Wände (`walls.*`)
-- einmalige Umstellung Tisch/Pergola von Mitten- auf Eck-Anker (Flag `_pivotCorner`, idempotent)
-- Bezugspunkt fix, Pfosten auf {x,y,h} bereinigt, Pergola/Labels ergänzt
+Brings old saved states to the current schema:
+- old single `garden.wallH` → all four individual wall heights (`walls.*`)
+- one-time conversion of table/pergola from center pivot to corner pivot (flag `_pivotCorner`, idempotent)
+- Reference point fixed, posts normalized to {x,y,h}, pergola/labels added if missing
 
-## Bekannte Einschränkungen / offene Punkte
-- Segel flach bzw. bilinear gebogen, kein Katenar-Durchhang (bewusst)
-- Feste Maße im Grundriss exakt; 3D-Kanten durch Höhenunterschiede minimal länger
-- Schattenfläche nicht am Gartenrand abgeschnitten
-- Möbel-Schattentest nur ein Messpunkt pro Objekt
-- Tagesauswertung-Gesamt ohne Überlappungs-Bereinigung (Summe statt Vereinigung)
+## Known Limitations / Open Issues
+- Sail is flat or bilinearly curved, no catenary sag (by design)
+- Fixed dimensions exact in floor plan; 3D edges slightly longer due to height differences
+- Shadow area not clipped at garden boundary
+- Furniture shade test uses only one measurement point per object
+- Daily analysis total without overlap correction (sum instead of union)
 
-## Geplante / nicht umgesetzte Features
-- Sonnenstunden-Auswertung pro Sitzplatz (von–bis beschattet)
-- Pfosten direkt mit der Maus ziehen
-- Warnung bei unmöglichem Dreieck (Dreiecksungleichung)
-- Überlappungsfreie Gesamt-Schattenfläche (Raster/Vereinigung)
-- Hindernisse (Haus, Baum); Regenschutz-Simulation bleibt ausgeschlossen
+## Planned / Unimplemented Features
+- Per-seat shade hours (from–to shaded)
+- Drag posts with mouse
+- Warning for invalid triangle (triangle inequality)
+- Overlap-free total shadow area (raster/union)
+- Obstacles (house, tree); rain protection simulation explicitly excluded
 
-## CDN-Abhängigkeiten
+## CDN Dependencies
 ```
 https://unpkg.com/suncalc@1.9.0/suncalc.js
 https://unpkg.com/three@0.160.0/build/three.module.js
 https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js
 ```
 
-## Lokaler Start (falls file:// Probleme)
+## Local Start (if file:// issues)
 ```bash
-cd sonnensegel-simulator
+cd shade-sail-simulator
 python3 -m http.server 8080
 # → http://localhost:8080
 ```
