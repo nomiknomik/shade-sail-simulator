@@ -116,57 +116,9 @@ Segel 2: aus (Dreieck 3/3/3 m, blau)
 - **Repo:** https://github.com/nomiknomik/shade-sail-simulator
 - **Live-App (GitHub Pages):** https://nomiknomik.github.io/shade-sail-simulator/
 - **Branch:** `main`
-- **Dateien im Repo:** `index.html`, `README.md` (englisch), `DEVELOPER.md` (technische Doku), `PROJEKTSTAND.md`, `.gitignore`
-- **GitHub-Username:** `nomiknomik`
-- **PAT-Scope nötig:** `repo` (Token unter github.com/settings/tokens erstellen)
+- **Dateien im Repo:** `index.html`, `README.md` (englisch), `DEVELOPER.md` (technische Doku), `.gitignore`
 
-### Neue Version auf GitHub publizieren — Anweisung für Claude
-
-> **Wichtig:** Claude hat zwischen verschiedenen Chats keinen persistenten Dateizugriff.
-> Deshalb läuft das Update vollständig über die **GitHub REST API** (kein lokales Git nötig).
-> Das funktioniert aus jedem Chat-Fenster, solange ein gültiges PAT vorliegt.
-
-#### Was Alex vorbereiten muss
-1. Die neue `index.html` in den Chat hochladen (oder den Inhalt einfügen)
-2. Ein gültiges GitHub PAT mit Scope `repo` bereitstellen
-3. Claude sagen: *„Lade die neue Version auf GitHub hoch"*
-
-#### Was Claude dann tut (Schritt für Schritt via bash_tool)
-
-**Schritt 1 — Aktuellen SHA der Datei abrufen** (nötig für den Update-API-Call):
-```bash
-curl -s \
-  -H "Authorization: token DEIN_PAT" \
-  https://api.github.com/repos/nomiknomik/shade-sail-simulator/contents/index.html \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])"
-```
-
-**Schritt 2 — Datei base64-kodieren:**
-```bash
-base64 -w 0 /pfad/zur/index.html
-```
-
-**Schritt 3 — Datei per API aktualisieren:**
-```bash
-curl -s -X PUT \
-  -H "Authorization: token DEIN_PAT" \
-  -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/nomiknomik/shade-sail-simulator/contents/index.html \
-  -d "{
-    \"message\": \"v3.x — Beschreibung der Änderungen\",
-    \"content\": \"BASE64_INHALT\",
-    \"sha\": \"AKTUELLER_SHA\",
-    \"branch\": \"main\"
-  }" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('commit',{}).get('html_url','Fehler:'), d.get('message',''))"
-```
-
-**Schritt 4 — Ergebnis prüfen:**
-GitHub Pages aktualisiert sich automatisch innerhalb ~1 Minute.
-Live-URL: https://nomiknomik.github.io/shade-sail-simulator/
-
-#### Mehrere Dateien auf einmal aktualisieren
-Für jede Datei (`index.html`, `README.md`, `DEVELOPER.md`, `PROJEKTSTAND.md`) denselben
-SHA-abrufen → base64 → PUT-Ablauf wiederholen. Jede Datei bekommt einen eigenen Commit.
+> Upload-Anleitung und Zugangsdaten befinden sich ausschließlich im privaten Projekt-Ordner.
 
 ## CDN-Abhängigkeiten (beim Öffnen nötig)
 ```
