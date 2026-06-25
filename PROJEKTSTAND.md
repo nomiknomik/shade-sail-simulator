@@ -11,7 +11,7 @@ per Doppelklick in Chrome/Safari öffnen (Internet für CDN-Libs nötig).
 - Speicherung: **localStorage** (primär) + Cookie (Fallback)
 - Export/Import als JSON-Datei
 
-## Aktuelle Version: 3.4 (Datei: index.html)
+## Aktuelle Version: 3.8 (Datei: index.html)
 
 ## Alle umgesetzten Features
 
@@ -73,8 +73,12 @@ per Doppelklick in Chrome/Safari öffnen (Internet für CDN-Libs nötig).
 
 ## Bekannte Einschränkungen / offene Punkte
 - Segel ist flaches, starres Panel (kein Durchhang)
-- Schattenfläche wird nicht am Gartenrand abgeschnitten
 - Möbel-Schattentest nur punktförmig (nicht gesamte Oberfläche)
+
+### v3.8: Schatten-Clipping + HUD-Overlay
+- Schattenfläche wird jetzt per Sutherland-Hodgman am Gartenrand abgeschnitten (sowohl Tagesauswertung als auch Echtzeit)
+- Tagesauswertung wird als permanentes HUD-Overlay links oben auf dem 3D-Viewport angezeigt
+- Aktualisiert sich sofort bei jeder Parameteränderung
 
 ## Geplante Features
 1. **Sonnenstunden-Auswertung**: wie viele h/Tag ist ein Punkt beschattet

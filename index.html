@@ -47,6 +47,9 @@
   #stage canvas{display:block}
   #hud{position:absolute;left:14px;bottom:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;backdrop-filter:blur(4px)}
   #hud .night{color:var(--sun)}
+  #dayHud{position:absolute;left:14px;top:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px);pointer-events:none;max-width:280px;line-height:1.6}
+  #dayHud b{color:var(--text);font-variant-numeric:tabular-nums}
+  #dayHud .dh-label{color:var(--sun);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -54,7 +57,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title">Shade Sail Simulator</h1>
-      <div class="ver">Version 3.7 · DE/EN/RU · Wände einzeln · Tagesauswertung</div>
+      <div class="ver">Version 3.8 · DE/EN/RU · Wände einzeln · Tagesauswertung</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -141,7 +144,7 @@
       <div class="legend" id="legendText"></div>
     </div>
   </aside>
-  <main id="stage"><div id="hud"></div></main>
+  <main id="stage"><div id="hud"></div><div id="dayHud"></div></main>
 </div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
@@ -725,13 +728,14 @@ function updateShadow(day){
   let html=''; const activeMeshes=[];
   S.sails.forEach((s,si)=>{ if(!s.on) return;
     const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(sunDir,-(P.y/sunDir.y)));
-    let area=0; for(let i=0;i<proj.length;i++){const a=proj[i],b=proj[(i+1)%proj.length]; area+=a.x*b.z-b.x*a.z;} area=Math.abs(area)/2;
+    const clipped=clipPolyToGarden(proj);
+    const area=polyAreaXZ(clipped);
     html+=`${t('shadow-sail')} ${si+1}: <b>${fmt(area)} m²</b><br>`;
-    if(show){ const tris=[]; for(let i=1;i<proj.length-1;i++){tris.push(proj[0],proj[i],proj[i+1]);}
+    if(show && clipped.length>=3){ const tris=[]; for(let i=1;i<clipped.length-1;i++){tris.push(clipped[0],clipped[i],clipped[i+1]);}
       const arr=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{arr[idx*3]=p.x;arr[idx*3+1]=0.02;arr[idx*3+2]=p.z;});
       const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(arr,3));
       shadowGroup.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x10161d,transparent:true,opacity:0.28,side:THREE.DoubleSide,depthWrite:false})));
-      const loop=[...proj,proj[0]].map(p=>new THREE.Vector3(p.x,0.025,p.z)); shadowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop),new THREE.LineBasicMaterial({color:0x10161d}))); }
+      const loop=[...clipped,clipped[0]].map(p=>new THREE.Vector3(p.x,0.025,p.z)); shadowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop),new THREE.LineBasicMaterial({color:0x10161d}))); }
     activeMeshes.push(sailMeshes[si]);
   });
   const blockers=[...activeMeshes]; if(pergolaRoof) blockers.push(pergolaRoof);
@@ -748,6 +752,33 @@ function updateShadow(day){
 
 /* ---- Tagesauswertung ---- */
 const ROUND=n=>Math.round(n*100)/100;
+/* Sutherland-Hodgman polygon clipping to garden rectangle (XZ plane) */
+function clipPolyToGarden(pts){
+  const hw=S.garden.w/2, hd=S.garden.d/2;
+  const edges=[ // each edge: inside test + intersection
+    {inside:p=>p.x>=-hw, intersect:(a,b)=>{const t=(-hw-a.x)/(b.x-a.x); return {x:-hw,z:a.z+t*(b.z-a.z)};}},
+    {inside:p=>p.x<= hw, intersect:(a,b)=>{const t=( hw-a.x)/(b.x-a.x); return {x: hw,z:a.z+t*(b.z-a.z)};}},
+    {inside:p=>p.z>=-hd, intersect:(a,b)=>{const t=(-hd-a.z)/(b.z-a.z); return {x:a.x+t*(b.x-a.x),z:-hd};}},
+    {inside:p=>p.z<= hd, intersect:(a,b)=>{const t=( hd-a.z)/(b.z-a.z); return {x:a.x+t*(b.x-a.x),z: hd};}}
+  ];
+  let poly=pts.map(p=>({x:p.x,z:p.z}));
+  for(const e of edges){
+    if(poly.length===0) return [];
+    const out=[];
+    for(let i=0;i<poly.length;i++){
+      const cur=poly[i], prev=poly[(i+poly.length-1)%poly.length];
+      const ci=e.inside(cur), pi=e.inside(prev);
+      if(pi&&ci) out.push(cur);
+      else if(pi&&!ci) out.push(e.intersect(prev,cur));
+      else if(!pi&&ci){ out.push(e.intersect(prev,cur)); out.push(cur); }
+    }
+    poly=out;
+  }
+  return poly;
+}
+function polyAreaXZ(pts){
+  let a=0; for(let i=0;i<pts.length;i++){const p=pts[i],q=pts[(i+1)%pts.length]; a+=p.x*q.z-q.x*p.z;} return Math.abs(a)/2;
+}
 function sunDirAtMin(min){
   const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(min);
   const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
@@ -757,8 +788,8 @@ function sunDirAtMin(min){
 function sailGroundArea(s,dir){
   if(dir.y<=0.02) return 0;
   const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(dir,-(P.y/dir.y)));
-  let area=0; for(let i=0;i<proj.length;i++){ const a=proj[i],b=proj[(i+1)%proj.length]; area+=a.x*b.z-b.x*a.z; }
-  return Math.abs(area)/2;
+  const clipped=clipPolyToGarden(proj);
+  return polyAreaXZ(clipped);
 }
 function computeDayShade(){
   const start=600,end=1080,step=15, hours=(end-start)/60;
@@ -775,11 +806,20 @@ function computeDayShade(){
 function renderDayShade(){
   const r=computeDayShade(); S.shadeAnalysis=r;
   const out=document.getElementById('dayShade'); if(!out) return;
-  if(!r.perSail.length){ out.innerHTML=t('dayshade-none'); return; }
+  if(!r.perSail.length){ out.innerHTML=t('dayshade-none'); renderDayHud(r); return; }
   let html=`<span style="color:var(--muted)">${r.date} · 10–18h</span><br>`;
   r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
   if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
   out.innerHTML=html;
+  renderDayHud(r);
+}
+function renderDayHud(r){
+  const hud=document.getElementById('dayHud'); if(!hud) return;
+  if(!r.perSail.length){ hud.innerHTML=''; return; }
+  let h=`<div class="dh-label">${t('sec-dayshade')} · ${r.date}</div>`;
+  r.perSail.forEach(p=>{ h+=`<span style="color:var(--muted)">${t('shadow-sail')} ${p.sail}:</span> <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
+  if(r.perSail.length>1) h+=`<span style="color:var(--muted)">${t('dayshade-total')}:</span> <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
+  hud.innerHTML=h;
 }
 
 function updateRef(){ refMarker.position.copy(refWorld()); }

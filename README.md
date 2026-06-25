@@ -173,7 +173,6 @@ Segel 2:  (deaktiviert)
 ## ⚠️ Bekannte Einschränkungen
 
 - Segel ist ein **flaches, starres Panel** — kein Durchhang/Katenar (bewusst)
-- Schattenfläche wird nicht am Gartenrand abgeschnitten (flache Sonne → großer Wert)
 - Möbel-Schattentest misst nur einen Punkt pro Objekt (nicht die gesamte Fläche)
 - Segel-Drag nur horizontal (keine Höhenänderung per Maus)
 
