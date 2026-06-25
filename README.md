@@ -10,7 +10,7 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://nomiknomik.github.io/shade-sail-simulator/)
 [![No Install](https://img.shields.io/badge/No%20Install-open%20index.html-brightgreen?style=for-the-badge)](#quick-start)
 [![Three.js 0.160](https://img.shields.io/badge/Three.js-0.160-black?style=for-the-badge&logo=threedotjs)](https://threejs.org)
-[![Version](https://img.shields.io/badge/Version-3.7-orange?style=for-the-badge)](#changelog)
+[![Version](https://img.shields.io/badge/Version-3.8-orange?style=for-the-badge)](#changelog)
 
 </div>
 
@@ -189,7 +189,7 @@ Sail 2:   (disabled)
 
 | Version | Changes |
 |---------|---------|
-| **3.7** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px) |
+| **3.8** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px) |
 | 3.6 | 4 individually adjustable wall heights; pivot-corner rotation for furniture; location selector (6 cities); daily shade analysis (10–18h, m²·h) |
 | 3.5 | Initial GitHub publish; README.md + DEVELOPER.md added |
 | 3.4 | Removed laser/polar input; fixed reference point at corner 3; label toggle; sail dimensions as number inputs; Pergola furniture; furniture drag; sail physics fix |
