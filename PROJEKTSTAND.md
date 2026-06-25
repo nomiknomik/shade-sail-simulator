@@ -54,7 +54,7 @@ GitHub Pages aktualisiert sich automatisch innerhalb ~1 Minute.
 
 ---
 
-## Aktuelle Version: 3.7 (Datei: index.html)
+## Aktuelle Version: 3.8 (Datei: index.html)
 
 ## Versionshistorie
 
@@ -64,6 +64,7 @@ GitHub Pages aktualisiert sich automatisch innerhalb ~1 Minute.
 | 3.4 | Laser-Modus entfernt; Bezugspunkt fest auf Ecke 3; Label-Toggle-Checkbox; Segel-Maße als Zahleneingabe; Pergola-Möbel; Möbel-Drag; Segelphysik gefixt |
 | 3.5 | Erst-Veröffentlichung auf GitHub; README.md + DEVELOPER.md hinzugefügt |
 | 3.6 | 4 Wandhöhen einzeln einstellbar; Eck-Drehpunkt (Pivot) für Tisch + Pergola; Ortsauswahlliste (Freudenstadt, Stuttgart, München, Berlin, Wien, Zürich); Tagesauswertung (10–18 Uhr, m²·h) |
+| 3.8 | Schattenfläche auf Gartengrenzen zugeschnitten (Sutherland-Hodgman); Tagesauswertungs-HUD im 3D-View (oben links) |
 | 3.7 | Mehrsprachige UI: DE / EN / RU; Label-Schrift 13 px (war 12 px), Labelbreite 96 px |
 
 ---
@@ -159,7 +160,7 @@ S = {
 ## Bekannte Einschränkungen
 
 - Segel ist flaches, starres Panel (kein Durchhang — bewusst so)
-- Schattenfläche wird nicht am Gartenrand abgeschnitten (flache Sonne → großer Wert)
+- Schattenfläche wird am Gartenrand abgeschnitten (Sutherland-Hodgman, seit v3.8) ✓
 - Möbel-Schattentest nur punktförmig (nicht gesamte Oberfläche)
 - Segel-Drag nur horizontal (keine Höhenänderung per Maus)
 
