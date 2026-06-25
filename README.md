@@ -1,16 +1,16 @@
 <div align="center">
 
-# 🌞 Sonnensegel-Simulator
+# 🌞 Shade Sail Simulator
 
-**Browserbasierter 3D-Planer für Sonnensegel / Shade Sails**  
-Visualisiert Schattenwurf, Segelausrichtung und Möbel-Beschattung zu jeder Tages- und Jahreszeit.
-
+**Browser-based 3D planner for shade sails (Sonnensegel)**  
+Visualizes shadow casting, sail orientation, and furniture shading at any time of day and year.
 
 ![Banner](screenshots/social-preview.png)
 
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://nomiknomik.github.io/shade-sail-simulator/)
-[![Keine Installation](https://img.shields.io/badge/Keine%20Installation-open%20index.html-brightgreen?style=for-the-badge)](#schnellstart)
+[![No Install](https://img.shields.io/badge/No%20Install-open%20index.html-brightgreen?style=for-the-badge)](#quick-start)
 [![Three.js 0.160](https://img.shields.io/badge/Three.js-0.160-black?style=for-the-badge&logo=threedotjs)](https://threejs.org)
+[![Version](https://img.shields.io/badge/Version-3.7-orange?style=for-the-badge)](#changelog)
 
 </div>
 
@@ -20,167 +20,186 @@ Visualisiert Schattenwurf, Segelausrichtung und Möbel-Beschattung zu jeder Tage
 
 <div align="center">
 
-| 3D-Ansicht mit Schattenwurf | Steuerungspanel |
+| 3D View with Shadow Casting | Control Panel |
 |:---:|:---:|
-| ![3D-Ansicht](https://nomiknomik.github.io/shade-sail-simulator/screenshots/3d-view.png) | ![Steuerung](https://nomiknomik.github.io/shade-sail-simulator/screenshots/panel.png) |
+| ![3D View](https://nomiknomik.github.io/shade-sail-simulator/screenshots/3d-view.png) | ![Panel](https://nomiknomik.github.io/shade-sail-simulator/screenshots/panel.png) |
 
-> *Screenshot: Sonnensegel über Gartenmöbeln, Sommer 15 Uhr, Freudenstadt*
+> *Screenshot: Shade sail over garden furniture, summer 3 pm, Freudenstadt*
 
 </div>
 
 ---
 
-## ✨ Features auf einen Blick
+## ✨ Features at a Glance
 
 | | |
 |---|---|
-| 🏡 **Realer Garten** | Maße, Wandhöhen, Nordausrichtung frei einstellbar |
-| ☀️ **Echter Sonnenstand** | Astronomisch korrekt via SunCalc — Ort, Datum, Uhrzeit |
-| 🪵 **6 Fixierpfosten** | Direkte X/Y-Eingabe **oder** Laser-Messung (Entfernung + Winkel) |
-| ⛵ **Bis zu 2 Segel** | Dreieck oder Rechteck, beliebige Größe und Farbe |
-| 🔵 **Auto-Ausrichtung** | Horn-Quaternion-Best-Fit: Segel hängt automatisch korrekt zwischen Pfosten |
-| 📐 **Schattenfläche** | Live-Berechnung in m² pro Segel |
-| 🪑 **Möbel-Test** | Tisch + Stühle: zeigt ob sie im Schatten oder in der Sonne liegen |
-| 🎬 **Tag abspielen** | Animiert Schattenverlauf über 24 Stunden |
-| 💾 **Auto-Speichern** | localStorage + JSON-Export/Import |
+| 🏡 **Real garden** | Width, depth, 4 individually adjustable wall heights, north offset |
+| ☀️ **Accurate sun** | Astronomically correct via SunCalc — location, date, time |
+| 🪵 **6 anchor posts** | Direct X/Y/H input, color-coded, toggleable 3D labels |
+| ⛵ **Up to 2 sails** | Triangle or rectangle, any size and color |
+| 🔵 **Auto-orientation** | Horn quaternion best-fit: sail hangs correctly between posts automatically |
+| 📐 **Shadow area** | Live calculation in m² per sail |
+| 📊 **Daily analysis** | Integrated shadow area 10–18h in m²·h per sail |
+| 🪑 **Furniture shading** | Table, chairs, pergola: shows whether each piece is in shade or sun |
+| 🎬 **Time animation** | Play shadow movement across 24 hours |
+| 🌍 **Multilingual** | DE / EN / RU — switchable at runtime |
+| 💾 **Auto-save** | localStorage + JSON export/import |
 
 ---
 
-## 🚀 Schnellstart
+## 🚀 Quick Start
 
 ```bash
-# Option A: direkt öffnen (Chrome empfohlen)
+# Option A: open directly (Chrome recommended)
 open index.html
 
-# Option B: lokaler Server (bei file://-Problemen in Safari)
+# Option B: local server (if file:// issues in Safari)
 python3 -m http.server 8080
 # → Browser: http://localhost:8080
 ```
 
-> **Kein Build-Tool, kein npm, keine Installation.**  
-> Einzige Voraussetzung: Internetverbindung beim ersten Öffnen (CDN-Bibliotheken).
+> **No build tool, no npm, no installation.**  
+> Only requirement: internet connection on first open (CDN libraries).
 
-### 🌐 Online nutzen
+### 🌐 Use Online
 
 **→ [nomiknomik.github.io/shade-sail-simulator](https://nomiknomik.github.io/shade-sail-simulator/)**
 
 ---
 
-## 🗺️ Wie es funktioniert
+## 🗺️ How It Works
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                 index.html  (alles in einer Datei)  │
-│                                                     │
-│  ┌─────────────┐    ┌──────────────────────────┐   │
-│  │ Steuerungs- │    │     Three.js 3D-Szene     │   │
-│  │   panel     │───▶│  Garten · Pfosten · Segel │   │
-│  │  (linke     │    │  Möbel · Schatten         │   │
-│  │   Seite)    │    │                           │   │
-│  └─────────────┘    └──────────────┬────────────┘   │
-│                                    │                │
-│                         ┌──────────▼─────────┐      │
-│                         │  SunCalc-Bibliothek│      │
-│                         │  Azimut + Elevation│      │
-│                         │  (Echtzeit)        │      │
-│                         └────────────────────┘      │
+│                 index.html  (everything in one file) │
+│                                                      │
+│  ┌─────────────┐    ┌──────────────────────────┐    │
+│  │   Control   │    │     Three.js 3D Scene     │    │
+│  │   Panel     │───▶│  Garden · Posts · Sails   │    │
+│  │  (left      │    │  Furniture · Shadows       │    │
+│  │   side)     │    │                           │    │
+│  └─────────────┘    └──────────────┬────────────┘    │
+│                                    │                 │
+│                         ┌──────────▼─────────┐       │
+│                         │  SunCalc Library   │       │
+│                         │  Azimuth+Elevation │       │
+│                         │  (real-time)       │       │
+│                         └────────────────────┘       │
 └─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🎮 Steuerung der 3D-Ansicht
+## 🎮 3D View Controls
 
-| Aktion | Eingabe |
+| Action | Input |
 |---|---|
-| 🔄 Kamera drehen | `Linke Maustaste` + ziehen |
-| 🔍 Zoomen | Mausrad |
-| ↔️ Kamera verschieben | `Rechte Maustaste` + ziehen |
-| ✋ **Segel verschieben** | `Linke Maustaste` auf Segel + ziehen |
-| ⟲ ⟳ Ecken rotieren | Buttons im Pfosten-Panel |
-| 🔁 Doppelklick auf Schieber | Zurück auf Standardwert |
+| 🔄 Rotate camera | `Left mouse button` + drag |
+| 🔍 Zoom | Mouse wheel |
+| ↔️ Pan camera | `Right mouse button` + drag |
+| ✋ **Move sail** | `Left mouse button` on sail + drag |
+| ⟲ ⟳ Rotate corner assignment | Buttons in post panel |
+| 🔁 Double-click slider | Reset to default value |
+| 🖱️ **Move furniture** | `Left mouse button` on furniture + drag |
 
 ---
 
-## 🪵 Pfosten-Eingabe: Direkt vs. Laser
+## 🪵 Post Input
 
-Der Simulator unterstützt zwei Eingabemodi — optimal für Messungen mit dem Laser-Entfernungsmesser:
+Each post is positioned relative to the **reference point** (fixed at garden corner 3, +X/+Y).
+Enter X offset, Y offset, and absolute height H in meters.
 
 ```
-Direkt-Modus          Laser/Polar-Modus
-─────────────         ─────────────────────
-X   (m)               Entfernung d (m)
-Y   (m)               Horizontalwinkel α (°)
-H   (m)               Vertikalwinkel β (°)
+Post input:
+  X   (m)   — horizontal offset from reference point
+  Y   (m)   — depth offset from reference point
+  H   (m)   — absolute height above ground
 ```
+
+Rope lengths are **calculated outputs**, not inputs — they update live as you adjust posts.
 
 ---
 
-## 🏗️ Technischer Stack
+## 🏗️ Technical Stack
 
-| Bibliothek | Version | Zweck |
+| Library | Version | Purpose |
 |---|---|---|
-| [Three.js](https://threejs.org) | 0.160 | 3D-Rendering, PCFSoft Shadow Maps |
-| [SunCalc](https://github.com/mourner/suncalc) | 1.9 | Astronomischer Sonnenstand |
-| Vanilla JS | ES2022 | Kein Framework, kein Build-Tool |
+| [Three.js](https://threejs.org) | 0.160 | 3D rendering, PCFSoft Shadow Maps |
+| [SunCalc](https://github.com/mourner/suncalc) | 1.9 | Astronomical sun position |
+| Vanilla JS | ES2022 | No framework, no build tool |
 
-**Algorithmus:** Horn-Quaternion-Best-Fit für die automatische Segel-Orientierung  
-(minimiert Fehler zwischen Pfosten-Positionen und Segel-Ecken)
+**Sail algorithm:** Horn quaternion best-fit registration.  
+Minimizes residuals between post positions and sail corners while keeping sail dimensions fixed.  
+The root coordinate system is relative to the user-defined reference point — matching how laser distance meter measurements are naturally taken.
 
 ---
 
-## 📁 Projektstruktur
+## 📁 Project Structure
 
 ```
 shade-sail-simulator/
-├── index.html         ← komplette App (~1 Datei)
-├── README.md          ← diese Datei
-└── PROJEKTSTAND.md    ← technische Zusammenfassung für Weiterentwicklung
+├── index.html         ← complete app (~966 lines)
+├── README.md          ← this file
+├── DEVELOPER.md       ← technical reference for contributors
+└── PROJEKTSTAND.md    ← German project status summary
 ```
 
 ---
 
-## 🗓️ Default-Konfiguration (eigene Gartenmessungen)
+## 🗓️ Default Configuration (real garden measurements)
 
 ```
-Garten:      9,5 × 9,5 m  ·  Wandhöhe 3 m  ·  Norden 229°
-Standort:    Freudenstadt, DE  (48,4636° N / 8,4111° O)
+Garden:      9.5 × 9.5 m  ·  all 4 walls 3 m  ·  North 229°
+Location:    Freudenstadt, DE  (48.4636° N / 8.4111° E)
 
-Pfosten 1 🔴  X=  0,0  Y=  0,0  H=2,9 m
-Pfosten 2 🟠  X= −7,0  Y=  0,0  H=3,0 m
-Pfosten 3 🟡  X= −9,5  Y=  0,0  H=3,0 m
-Pfosten 4 🟢  X= −6,2  Y= −9,5  H=2,5 m
-Pfosten 5 🔵  X=  0,0  Y= −9,5  H=2,5 m
-Pfosten 6 🟣  X=  2,5  Y=  7,5  H=3,0 m
+Post 1 🔴   X=  0.0   Y=  0.0   H=2.9 m
+Post 2 🟠   X= −7.0   Y=  0.0   H=3.0 m
+Post 3 🟡   X= −9.5   Y=  0.0   H=3.0 m
+Post 4 🟢   X= −6.2   Y= −9.5   H=2.5 m
+Post 5 🔵   X=  0.0   Y= −9.5   H=2.5 m
+Post 6 🟣   X=  2.5   Y=  7.5   H=3.0 m
 
-Segel 1:  Dreieck  6,4 / 8,0 / 4,0 m  ·  Pfosten 4–5–1
-Segel 2:  (deaktiviert)
+Sail 1:   Triangle  6.4 / 8.0 / 4.0 m  ·  Posts 4–5–1
+Sail 2:   (disabled)
 ```
 
 ---
 
-## 🔮 Geplante Erweiterungen
+## 🔮 Planned Features
 
-- [ ] **Sonnenstunden-Analyse** — für jeden Sitzplatz: wann und wie lange Schatten
-- [ ] **Pfosten per Maus ziehen** (analog zu Segel-Drag)
-- [ ] **Dreiecks-Validierung** — Warnung bei ungültigen Seitenmaßen
-- [ ] **Großer Seilabstand** — Warnung wenn Segel deutlich kleiner als Pfosten-Abstand
-- [ ] Weitere Möbel / Objekte (Sonnenschirm, Pflanzenkübel)
-- [ ] Hindernisse (Haus, Baum, Mauer)
-
----
-
-## ⚠️ Bekannte Einschränkungen
-
-- Segel ist ein **flaches, starres Panel** — kein Durchhang/Katenar (bewusst)
-- Möbel-Schattentest misst nur einen Punkt pro Objekt (nicht die gesamte Fläche)
-- Segel-Drag nur horizontal (keine Höhenänderung per Maus)
+- [ ] **Draggable posts** — move posts with mouse (like sail drag)
+- [ ] **Triangle validation** — warning for invalid side lengths (a+b < c)
+- [ ] **Rope slack warning** — when sail is significantly smaller than post spacing
+- [ ] Additional furniture / objects (parasol, plant pots)
+- [ ] Obstacles (house wall, tree)
 
 ---
 
-## 📄 Lizenz
+## ⚠️ Known Limitations
 
-Privates Projekt. Kein öffentliches Release.
+- Sail is a **flat rigid panel** — no sag/catenary (by design)
+- Shadow area is not clipped at garden boundary (low sun → large value)
+- Furniture shade test uses one measurement point per object (not entire surface)
+- Sail drag is horizontal only (no height change via mouse)
+
+---
+
+## 📋 Changelog
+
+| Version | Changes |
+|---------|---------|
+| **3.7** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px) |
+| 3.6 | 4 individually adjustable wall heights; pivot-corner rotation for furniture; location selector (6 cities); daily shade analysis (10–18h, m²·h) |
+| 3.5 | Initial GitHub publish; README.md + DEVELOPER.md added |
+| 3.4 | Removed laser/polar input; fixed reference point at corner 3; label toggle; sail dimensions as number inputs; Pergola furniture; furniture drag; sail physics fix |
+| 3.3 | Initial version: garden, 6 posts, 2 sails, furniture, Horn quaternion best-fit, drag, localStorage |
+
+---
+
+## 📄 License
+
+Private project. No public release.
 
 ---
 
