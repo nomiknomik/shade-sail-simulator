@@ -10,7 +10,7 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://nomiknomik.github.io/shade-sail-simulator/)
 [![No Install](https://img.shields.io/badge/No%20Install-open%20index.html-brightgreen?style=for-the-badge)](#quick-start)
 [![Three.js 0.160](https://img.shields.io/badge/Three.js-0.160-black?style=for-the-badge&logo=threedotjs)](https://threejs.org)
-[![Version](https://img.shields.io/badge/Version-3.8-orange?style=for-the-badge)](#changelog)
+[![Version](https://img.shields.io/badge/Version-3.9-orange?style=for-the-badge)](#changelog)
 
 </div>
 
@@ -50,6 +50,9 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 | 📐 **Shadow area** | Live calculation in m² per sail, clipped to garden boundary |
 | 📊 **Daily analysis** | Integrated shadow area 10–18h in m²·h per sail |
 | 🪑 **Furniture shading** | Table, chairs, pergola: shows whether each piece is in shade or sun |
+| 🧍 **Person figure** | Draggable human figure with adjustable height (default 1.9 m) for scale reference |
+| 🖱️ **Click-to-scroll** | Click any 3D element to scroll the settings panel to its controls |
+| 🔢 **Comma decimals** | All numeric inputs accept German-style comma decimal separator |
 | 🎬 **Time animation** | Play shadow movement across 24 hours |
 | 🌍 **Multilingual** | DE / EN / RU — switchable at runtime |
 | 💾 **Auto-save** | localStorage + JSON export/import |
@@ -110,6 +113,8 @@ python3 -m http.server 8080
 | ⟲ ⟳ Rotate corner assignment | Buttons in post panel |
 | 🔁 Double-click slider | Reset to default value |
 | 🖱️ **Move furniture** | `Left mouse button` on furniture + drag |
+| 🧍 **Move person** | `Left mouse button` on person + drag |
+| 🎯 **Click → settings** | Click any 3D element to scroll panel to its settings |
 
 ---
 
@@ -147,7 +152,7 @@ The root coordinate system is relative to the user-defined reference point — m
 
 ```
 shade-sail-simulator/
-├── index.html         ← complete app (~966 lines)
+├── index.html         ← complete app (~1100 lines)
 ├── README.md          ← this file
 ├── DEVELOPER.md       ← technical reference for contributors
 └── screenshots/       ← app screenshots (see SCREENSHOTS.md)
@@ -197,7 +202,8 @@ Sail 2:   (disabled)
 
 | Version | Changes |
 |---------|---------|
-| **3.8** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px); shadow area clipped to garden boundary (Sutherland-Hodgman); persistent daily analysis HUD overlay |
+| **3.9** | Person figure (draggable, adjustable height); click-to-scroll (click 3D element → panel scrolls to settings); comma decimal separator for all numeric inputs; highlight animation on scrolled card |
+| 3.8 | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px); shadow area clipped to garden boundary (Sutherland-Hodgman); persistent daily analysis HUD overlay |
 | 3.6 | 4 individually adjustable wall heights; pivot-corner rotation for furniture; location selector (6 cities); daily shade analysis (10–18h, m²·h) |
 | 3.5 | Initial GitHub publish; README.md + DEVELOPER.md added |
 | 3.4 | Removed laser/polar input; fixed reference point at corner 3; label toggle; sail dimensions as number inputs; Pergola furniture; furniture drag; sail physics fix |
