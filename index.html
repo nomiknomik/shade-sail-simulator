@@ -50,6 +50,8 @@
   #dayHud{position:absolute;left:14px;top:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px);pointer-events:none;max-width:280px;line-height:1.6}
   #dayHud b{color:var(--text);font-variant-numeric:tabular-nums}
   #dayHud .dh-label{color:var(--sun);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  @keyframes card-flash{ 0%{box-shadow:0 0 0 2px var(--sun)} 100%{box-shadow:none} }
+  .card.highlight{ animation:card-flash .9s ease-out forwards }
 </style>
 </head>
 <body>
@@ -57,7 +59,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title">Shade Sail Simulator</h1>
-      <div class="ver">Version 3.8 · DE/EN/RU · Wände einzeln · Tagesauswertung</div>
+      <div class="ver">Version 3.9 · DE/EN/RU · Person · Click-to-scroll</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -78,13 +80,13 @@
 
     <div class="group">
       <h2 data-i18n="sec-garden"></h2>
-      <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="30" step="0.5"><input id="gwn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-depth"></label><input id="gd" type="range" min="3" max="30" step="0.5"><input id="gdn" class="num" type="number" min="3" max="30" step="0.5"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="4" step="0.1"><input id="wx0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="4" step="0.1"><input id="wxbn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="4" step="0.1"><input id="wy0n" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="4" step="0.1"><input id="wytn" class="num" type="number" min="0" max="4" step="0.1"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="number" min="0" max="360" step="1"><span class="unit">°</span></div>
+      <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="30" step="0.5"><input id="gwn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-depth"></label><input id="gd" type="range" min="3" max="30" step="0.5"><input id="gdn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="4" step="0.1"><input id="wx0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="4" step="0.1"><input id="wxbn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="4" step="0.1"><input id="wy0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="4" step="0.1"><input id="wytn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="text" inputmode="decimal"><span class="unit">°</span></div>
       <p class="hint" data-i18n="hint-walls"></p>
     </div>
 
@@ -100,8 +102,8 @@
           <option value="48.7606,8.2398">Baden-Baden</option>
         </select>
       </div>
-      <div class="row"><label data-i18n="lbl-lat"></label><input id="lat" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
-      <div class="row"><label data-i18n="lbl-lon"></label><input id="lon" type="number" class="num" step="0.0001" style="width:auto;flex:1"></div>
+      <div class="row"><label data-i18n="lbl-lat"></label><input id="lat" type="text" inputmode="decimal" class="num" style="width:auto;flex:1"></div>
+      <div class="row"><label data-i18n="lbl-lon"></label><input id="lon" type="text" inputmode="decimal" class="num" style="width:auto;flex:1"></div>
       <div class="row"><label data-i18n="lbl-date"></label><input id="date" type="date"></div>
       <div class="row"><label data-i18n="lbl-time"></label><input id="time" type="range" min="0" max="1439" step="5"><input id="timeInput" type="time"></div>
       <div class="row" style="gap:8px">
@@ -127,6 +129,12 @@
       <h2 data-i18n="sec-furniture"></h2>
       <p class="hint" data-i18n="hint-furniture"></p>
       <div id="furniture"></div>
+    </div>
+
+    <div class="group">
+      <h2 data-i18n="sec-person"></h2>
+      <p class="hint" data-i18n="hint-person"></p>
+      <div id="person"></div>
     </div>
 
     <div class="group">
@@ -250,6 +258,10 @@ const TRANSLATIONS = {
     'rot-cw': 'im Uhrzeigersinn',
     'center-tip': 'zentriert zwischen die Pfosten',
     'lbl-corner-ecke': 'Ecke',
+    'sec-person': 'Person',
+    'hint-person': 'Im 3D mit der Maus verschiebbar. Höhe als Zahleneingabe.',
+    'person-label': 'Person',
+    'lbl-person-h': 'Körpergröße',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -337,6 +349,10 @@ const TRANSLATIONS = {
     'rot-cw': 'clockwise',
     'center-tip': 'center between posts',
     'lbl-corner-ecke': 'Corner',
+    'sec-person': 'Person',
+    'hint-person': 'Drag in 3D view. Height via number input.',
+    'person-label': 'Person',
+    'lbl-person-h': 'Height',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -424,6 +440,10 @@ const TRANSLATIONS = {
     'rot-cw': 'по часовой стрелке',
     'center-tip': 'центрировать между столбами',
     'lbl-corner-ecke': 'Угол',
+    'sec-person': 'Человек',
+    'hint-person': 'Перетаскивается в 3D. Рост задаётся числом.',
+    'person-label': 'Человек',
+    'lbl-person-h': 'Рост',
   }
 };
 
@@ -452,6 +472,7 @@ window.setLang=function(lang){
   buildPointEditors();
   buildSailEditors();
   buildFurnitureEditors();
+  buildPersonEditor();
   updateSun();
   updateShadow(sunDir.y>0.02);
   renderDayShade();
@@ -487,6 +508,7 @@ function defaultState(){
       chair2: { on:true, x:-3.85, y:-4.75, yaw:-90 },
       pergola:{ on:true, x:-3.5,  y:-3.5, yaw:0, pw:3, pl:3, ph:2.2 },
     },
+    person:{ on:true, x:-4.5, y:-6.5, h:1.9 },
   };
 }
 
@@ -520,6 +542,8 @@ function migrate(st){
     if(pg){ pg.x-=(pg.pw||3)/2; pg.y-=(pg.pl||3)/2; }
     st._pivotCorner=true;
   }
+  if(!st.person) st.person=d.person; else st.person=Object.assign({},d.person,st.person);
+  if(typeof st.person.h!=='number'||st.person.h<0.5) st.person.h=1.9;
   return st;
 }
 
@@ -539,6 +563,7 @@ let groundMesh,gridHelper,wallsGroup;
 const polesGroup=new THREE.Group(); scene.add(polesGroup);
 const ropesGroup=new THREE.Group(); scene.add(ropesGroup);
 const furnGroup=new THREE.Group(); scene.add(furnGroup);
+const personGroup=new THREE.Group(); scene.add(personGroup);
 const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
 const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
 const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),new THREE.Vector3(0,0.02,0),4,0xf4a93c,0.9,0.5); scene.add(northArrow);
@@ -676,6 +701,37 @@ function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld
     const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; obj.userData.furnKey=key; furnGroup.add(obj);
     if(key==='pergola') pergolaRoof=obj.userData.shadeMesh; });
   furnGroup.updateMatrixWorld(true); }
+
+/* ---- Person figure ---- */
+function buildPerson(){
+  personGroup.clear();
+  const p=S.person; if(!p||!p.on) return;
+  const B=refWorld(); const h=p.h||1.9;
+  const skinMat=new THREE.MeshStandardMaterial({color:0xe8b88a,roughness:0.85});
+  const shirtMat=new THREE.MeshStandardMaterial({color:0x3a7bd5,roughness:0.85});
+  const pantsMat=new THREE.MeshStandardMaterial({color:0x3a3a4a,roughness:0.85});
+  const headR=h*0.06; const legH=h*0.46; const torsoH=h*0.32; const neckY=legH+torsoH;
+  /* legs */
+  const legR=h*0.035; const legGap=h*0.06;
+  const legGeo=new THREE.CylinderGeometry(legR,legR,legH,8);
+  const lLeg=new THREE.Mesh(legGeo,pantsMat); lLeg.position.set(-legGap,legH/2,0); lLeg.castShadow=true; personGroup.add(lLeg);
+  const rLeg=new THREE.Mesh(legGeo,pantsMat); rLeg.position.set(legGap,legH/2,0); rLeg.castShadow=true; personGroup.add(rLeg);
+  /* torso */
+  const torsoW=h*0.14, torsoD=h*0.08;
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(torsoW,torsoH,torsoD),shirtMat);
+  torso.position.set(0,legH+torsoH/2,0); torso.castShadow=true; personGroup.add(torso);
+  /* arms */
+  const armR=h*0.028, armH=h*0.30;
+  const armGeo=new THREE.CylinderGeometry(armR,armR,armH,8);
+  const lArm=new THREE.Mesh(armGeo,shirtMat); lArm.position.set(-torsoW/2-armR,neckY-armH/2,0); lArm.castShadow=true; personGroup.add(lArm);
+  const rArm=new THREE.Mesh(armGeo,shirtMat); rArm.position.set(torsoW/2+armR,neckY-armH/2,0); rArm.castShadow=true; personGroup.add(rArm);
+  /* head */
+  const head=new THREE.Mesh(new THREE.SphereGeometry(headR,16,12),skinMat);
+  head.position.set(0,neckY+headR+h*0.01,0); head.castShadow=true; personGroup.add(head);
+  personGroup.position.set(B.x+p.x,0,B.z+p.y);
+  personGroup.userData.furnKey='__person__';
+  personGroup.updateMatrixWorld(true);
+}
 
 /* ---- Labels ---- */
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -825,7 +881,7 @@ function renderDayHud(r){
 function updateRef(){ refMarker.position.copy(refWorld()); }
 function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); updateSun(); renderDayShade(); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); updateSun(); renderDayShade(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
@@ -836,30 +892,31 @@ function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return
 /* ---- UI ---- */
 const $=id=>document.getElementById(id);
 const fmt=(n,d=1)=>Number(n).toFixed(d).replace('.',',');
+const pn=v=>{ if(typeof v==='string') v=v.replace(',','.'); v=+v; return isNaN(v)?0:v; };
 function link(card,cls,lo,hi,apply){
   const sl=card.querySelector('.'+cls), nu=card.querySelector('.'+cls+'n');
-  const set=v=>{ v=+v; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=v; apply(v); touch(); };
+  const set=v=>{ v=pn(v); v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=fmt(v,2).replace(/,?0+$/,''); apply(v); touch(); };
   sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
 }
 function bindNum(card,cls,lo,hi,apply){
   const el=card.querySelector('.'+cls); if(!el) return;
-  el.onchange=()=>{ let v=+el.value; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); el.value=v; apply(v); updateAll(); touch(); };
+  el.onchange=()=>{ let v=pn(el.value); v=Math.min(hi,Math.max(lo,v)); el.value=fmt(v,2).replace(/,?0+$/,''); apply(v); updateAll(); touch(); };
 }
 function linkId(slId,numId,lo,hi,apply){
   const sl=$(slId),nu=$(numId);
-  const set=v=>{ v=+v; if(isNaN(v)) v=lo; v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=v; apply(v); touch(); };
+  const set=v=>{ v=pn(v); v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=fmt(v,2).replace(/,?0+$/,''); apply(v); touch(); };
   sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
-  nu.value=sl.value;
+  nu.value=fmt(+sl.value,2).replace(/,?0+$/,'');
 }
 function rowHTML(label,cls,min,max,step,val,unit,def){
   return `<div class="row"><label>${label}</label>`+
     `<input type="range" class="${cls}" min="${min}" max="${max}" step="${step}" value="${val}"${def!==undefined?` data-default="${def}"`:''}>`+
-    `<input type="number" class="num ${cls}n" min="${min}" max="${max}" step="${step}" value="${val}">`+
+    `<input type="text" inputmode="decimal" class="num ${cls}n" value="${fmt(val,2).replace(/,?0+$/,'')}">`+
     (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
 }
 function numRowHTML(label,cls,val,unit){
   return `<div class="row"><label>${label}</label>`+
-    `<input type="number" class="num ${cls}" style="width:auto;flex:1" min="0.5" max="20" step="0.1" value="${val}">`+
+    `<input type="text" inputmode="decimal" class="num ${cls}" style="width:auto;flex:1" value="${fmt(val,2).replace(/,?0+$/,'')}">`+
     (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
 }
 
@@ -871,9 +928,9 @@ function wireStaticUI(){
   $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
   const syncCity=()=>{ $('city').value=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; if(!$('city').value||$('city').selectedIndex<0) $('city').value='manual'; };
   $('city').onchange=e=>{ if(e.target.value==='manual') return; const [la,lo]=e.target.value.split(',').map(Number);
-    S.loc.lat=la; S.loc.lon=lo; $('lat').value=la; $('lon').value=lo; updateSun(); renderDayShade(); touch(); };
-  $('lat').value=S.loc.lat; $('lat').oninput=e=>{S.loc.lat=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
-  $('lon').value=S.loc.lon; $('lon').oninput=e=>{S.loc.lon=+e.target.value;$('city').value='manual';updateSun();renderDayShade();touch();};
+    S.loc.lat=la; S.loc.lon=lo; $('lat').value=fmt(la,4); $('lon').value=fmt(lo,4); updateSun(); renderDayShade(); touch(); };
+  $('lat').value=fmt(S.loc.lat,4); $('lat').oninput=e=>{S.loc.lat=pn(e.target.value);$('city').value='manual';updateSun();renderDayShade();touch();};
+  $('lon').value=fmt(S.loc.lon,4); $('lon').oninput=e=>{S.loc.lon=pn(e.target.value);$('city').value='manual';updateSun();renderDayShade();touch();};
   syncCity();
   $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();renderDayShade();touch();};
   $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
@@ -892,7 +949,7 @@ $('now').onclick=()=>{ const n=new Date(); S.dateStr=n.toISOString().slice(0,10)
 function buildPointEditors(){
   const host=$('points'); host.innerHTML='';
   S.points.forEach((p,i)=>{
-    const D=DEF.points[i]; const card=document.createElement('div'); card.className='card';
+    const D=DEF.points[i]; const card=document.createElement('div'); card.className='card'; card.dataset.postIdx=i; card.dataset.postIdx=i;
     card.innerHTML=`<h3><span><span class="dot" style="background:${POST_HEX[i]}"></span>${t('post-label')} ${i+1}</span></h3>
       ${rowHTML(t('lbl-x'),'rx',-15,15,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'ry',-15,15,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-height'),'rh',0.3,6,0.1,p.h,'m',D.h)}`;
     link(card,'rx',-15,15,v=>{p.x=v;updateAll();}); link(card,'ry',-15,15,v=>{p.y=v;updateAll();}); link(card,'rh',0.3,6,v=>{p.h=v;updateAll();});
@@ -906,7 +963,7 @@ function rotateSail(s,dir){ if(dir>0) s.posts.unshift(s.posts.pop()); else s.pos
 function buildSailEditors(){
   const host=$('sails'); host.innerHTML='';
   S.sails.forEach((s,si)=>{
-    const card=document.createElement('div'); card.className='card';
+    const card=document.createElement('div'); card.className='card'; card.dataset.sailIdx=si;
     const sizeHtml = s.shape===3
       ? numRowHTML(t('lbl-side-a'),'sa',s.a,'m')+numRowHTML(t('lbl-side-b'),'sb',s.b,'m')+numRowHTML(t('lbl-side-c'),'sc',s.c,'m')
       : numRowHTML(t('lbl-bw'),'bw',s.bw,'m')+numRowHTML(t('lbl-bl'),'bl',s.bl,'m');
@@ -954,7 +1011,21 @@ function buildFurnitureEditors(){
 }
 function syncFurnitureInputs(key){ const card=document.querySelector(`#furniture .card[data-fkey="${key}"]`); if(!card) return; const f=S.furniture[key];
   const fx=card.querySelector('.fx'),fxn=card.querySelector('.fxn'),fy=card.querySelector('.fy'),fyn=card.querySelector('.fyn');
-  if(fx){ fx.value=f.x.toFixed(1); fxn.value=f.x.toFixed(1); } if(fy){ fy.value=f.y.toFixed(1); fyn.value=f.y.toFixed(1); } }
+  if(fx){ fx.value=f.x.toFixed(1); fxn.value=fmt(f.x); } if(fy){ fy.value=f.y.toFixed(1); fyn.value=fmt(f.y); } }
+
+function buildPersonEditor(){
+  const host=$('person'); host.innerHTML='';
+  const p=S.person; const D=DEF.person||{on:true,x:-2,y:-2,h:1.9};
+  const card=document.createElement('div'); card.className='card';
+  card.innerHTML=`<h3>${t('person-label')}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${p.on?'checked':''}> ${t('lbl-visible')}</label></h3>
+    ${rowHTML(t('lbl-x'),'px',-15,15,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'py',-15,15,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-person-h'),'ph',0.5,2.5,0.01,p.h,'m',D.h)}`;
+  card.querySelector('.on').onchange=e=>{ p.on=e.target.checked; buildPerson(); touch(); };
+  link(card,'px',-15,15,v=>{p.x=v;buildPerson();}); link(card,'py',-15,15,v=>{p.y=v;buildPerson();}); link(card,'ph',0.5,2.5,v=>{p.h=v;buildPerson();});
+  host.appendChild(card);
+}
+function syncPersonInputs(){ const card=document.querySelector('#person .card'); if(!card) return; const p=S.person;
+  const px=card.querySelector('.px'),pxn=card.querySelector('.pxn'),py=card.querySelector('.py'),pyn=card.querySelector('.pyn');
+  if(px){ px.value=p.x.toFixed(1); pxn.value=fmt(p.x); } if(py){ py.value=p.y.toFixed(1); pyn.value=fmt(p.y); } }
 
 $('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
   const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -967,19 +1038,37 @@ $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; co
   r.readAsText(file); e.target.value=''; };
 $('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); } };
 
-function refreshUI(){ applyTranslations(); wireStaticUI(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildGarden(); updateAll(); }
+function refreshUI(){ applyTranslations(); wireStaticUI(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
 
 function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 window.addEventListener('resize',onResize);
 function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
 
-/* ---- Maus-Drag ---- */
-let drag=null;
+/* ---- Maus-Drag & Click-to-Scroll ---- */
+let drag=null; let pointerDownPos=null;
 function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
 function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
-function onPointerDown(e){ if(e.button!==0) return; raycaster.setFromCamera(ndc(e),camera);
+function scrollToCard(selector){ const el=document.querySelector(selector); if(!el) return; el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight'); }
+function handleClick(e){ raycaster.setFromCamera(ndc(e),camera);
+  /* poles */
+  const poles=raycaster.intersectObjects(polesGroup.children,false);
+  if(poles.length){ const idx=Math.floor(polesGroup.children.indexOf(poles[0].object)/2); if(idx>=0) scrollToCard(`#points .card[data-post-idx="${idx}"]`); return; }
+  /* sails */
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); return; }
+  /* person */
+  const ph=raycaster.intersectObjects(personGroup.children,false);
+  if(ph.length){ scrollToCard('#person .card'); return; }
+  /* furniture */
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; if(o) scrollToCard(`#furniture .card[data-fkey="${o.userData.furnKey}"]`); }
+}
+function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,y:e.clientY}; raycaster.setFromCamera(ndc(e),camera);
   const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
   if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
+  /* person drag */
+  const ph=raycaster.intersectObjects(personGroup.children,false);
+  if(ph.length){ const pt=groundPoint(e,0); if(pt){ drag={ type:'person', last:pt }; controls.enabled=false; return; } }
   const fh=raycaster.intersectObjects(furnGroup.children,true);
   if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; const pt=groundPoint(e,0);
     if(o && pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; } }
@@ -989,10 +1078,16 @@ function onPointerMove(e){ if(!drag) return;
       s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
       const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;
       buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
+  else if(drag.type==='person'){ const pt=groundPoint(e,0); if(pt){ const p=S.person; p.x+=(pt.x-drag.last.x); p.y+=(pt.z-drag.last.z); drag.last.copy(pt);
+      buildPerson(); syncPersonInputs(); touch(); } }
   else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
       buildFurniture(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
-function onPointerUp(){ if(!drag) return; const wasDrag=drag.type; drag=null; controls.enabled=true; if(wasDrag) renderDayShade(); }
+function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
+  if(wasDrag) renderDayShade();
+  else if(pointerDownPos && e && Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y)<6) handleClick(e);
+  pointerDownPos=null;
+}
 renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
 window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
 
