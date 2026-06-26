@@ -992,7 +992,7 @@ function onPointerMove(e){ if(!drag) return;
   else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
       buildFurniture(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
-function onPointerUp(){ if(!drag) return; drag=null; controls.enabled=true; }
+function onPointerUp(){ if(!drag) return; const wasDrag=drag.type; drag=null; controls.enabled=true; if(wasDrag) renderDayShade(); }
 renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
 window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
 
