@@ -20,11 +20,19 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 
 <div align="center">
 
-| 3D View with Shadow Casting | Control Panel |
+| Full Application | 3D View |
 |:---:|:---:|
-| ![3D View](https://nomiknomik.github.io/shade-sail-simulator/screenshots/3d-view.png) | ![Panel](https://nomiknomik.github.io/shade-sail-simulator/screenshots/panel.png) |
+| ![Fullscreen](screenshots/fullscreen.png) | ![3D View](screenshots/3d-view.png) |
 
-> *Screenshot: Shade sail over garden furniture, summer 3 pm, Freudenstadt*
+| Control Panel — Garden & Time | Posts & Sails |
+|:---:|:---:|
+| ![Panel](screenshots/panel.png) | ![Sails Panel](screenshots/panel-sails.png) |
+
+| Furniture Settings | Shadow & Daily Analysis |
+|:---:|:---:|
+| ![Furniture](screenshots/panel-furniture.png) | ![Shadow](screenshots/panel-shadow.png) |
+
+> *Screenshots: Shade sail over garden furniture, summer morning, Freudenstadt*
 
 </div>
 
@@ -39,7 +47,7 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 | 🪵 **6 anchor posts** | Direct X/Y/H input, color-coded, toggleable 3D labels |
 | ⛵ **Up to 2 sails** | Triangle or rectangle, any size and color |
 | 🔵 **Auto-orientation** | Horn quaternion best-fit: sail hangs correctly between posts automatically |
-| 📐 **Shadow area** | Live calculation in m² per sail |
+| 📐 **Shadow area** | Live calculation in m² per sail, clipped to garden boundary |
 | 📊 **Daily analysis** | Integrated shadow area 10–18h in m²·h per sail |
 | 🪑 **Furniture shading** | Table, chairs, pergola: shows whether each piece is in shade or sun |
 | 🎬 **Time animation** | Play shadow movement across 24 hours |
@@ -142,7 +150,7 @@ shade-sail-simulator/
 ├── index.html         ← complete app (~966 lines)
 ├── README.md          ← this file
 ├── DEVELOPER.md       ← technical reference for contributors
-└── PROJEKTSTAND.md    ← German project status summary
+└── screenshots/       ← app screenshots (see SCREENSHOTS.md)
 ```
 
 ---
@@ -179,7 +187,7 @@ Sail 2:   (disabled)
 ## ⚠️ Known Limitations
 
 - Sail is a **flat rigid panel** — no sag/catenary (by design)
-- Shadow area is not clipped at garden boundary (low sun → large value)
+- Shadow area is clipped to garden boundary via Sutherland-Hodgman algorithm
 - Furniture shade test uses one measurement point per object (not entire surface)
 - Sail drag is horizontal only (no height change via mouse)
 
@@ -189,7 +197,7 @@ Sail 2:   (disabled)
 
 | Version | Changes |
 |---------|---------|
-| **3.8** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px) |
+| **3.8** | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px); shadow area clipped to garden boundary (Sutherland-Hodgman); persistent daily analysis HUD overlay |
 | 3.6 | 4 individually adjustable wall heights; pivot-corner rotation for furniture; location selector (6 cities); daily shade analysis (10–18h, m²·h) |
 | 3.5 | Initial GitHub publish; README.md + DEVELOPER.md added |
 | 3.4 | Removed laser/polar input; fixed reference point at corner 3; label toggle; sail dimensions as number inputs; Pergola furniture; furniture drag; sail physics fix |
