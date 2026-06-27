@@ -6,7 +6,7 @@
 <title>Shade Sail Simulator — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
-<meta name="author" content="nomiknomik">
+<meta name="author" content="Alexander Zabelyshenskiy">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://nomiknomik.github.io/shade-sail-simulator/">
 <!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
@@ -29,6 +29,11 @@
   #panel{width:344px;min-width:344px;height:100%;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding-bottom:50px}
   #panel header{padding:16px 18px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:3}
   #panel header h1{margin:0;font-size:16px}
+  #panel header h1 a{color:var(--text);text-decoration:none}
+  #panel header h1 a:hover{color:var(--sun);text-decoration:underline}
+  #panel footer{padding:14px 18px;font-size:11px;color:var(--muted);line-height:1.6}
+  #panel footer a{color:var(--ref);text-decoration:none}
+  #panel footer a:hover{text-decoration:underline}
   #panel header .ver{font-size:11px;color:var(--muted);margin-top:2px}
   #panel header .langbar{display:flex;gap:4px;margin-top:8px}
   #panel header .langbar button{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:5px;padding:3px 9px;font-size:12px;cursor:pointer;font-weight:600}
@@ -70,14 +75,16 @@
   @keyframes card-flash{ 0%{box-shadow:0 0 0 2px var(--sun)} 100%{box-shadow:none} }
   .card.highlight{ animation:card-flash .9s ease-out forwards }
   .group.highlight{ animation:card-flash .9s ease-out forwards }
+  @keyframes row-flash{ 0%{background:rgba(244,169,60,.35);box-shadow:0 0 0 2px var(--sun)} 100%{background:transparent;box-shadow:none} }
+  .row.highlight{ animation:row-flash 1.2s ease-out forwards;border-radius:6px }
 </style>
 </head>
 <body>
 <div id="app">
   <aside id="panel">
     <header>
-      <h1 id="h-title">Shade Sail Simulator</h1>
-      <div class="ver">Version 4.0 · DE/EN/RU · Nordpfeil-Fix · Sonnenpfeil · Wand-Klick</div>
+      <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
+      <div class="ver">Version 4.1 · DE/EN/RU · blauer Nordpfeil · Wand-Klick · Lizenz</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -100,10 +107,10 @@
       <h2 data-i18n="sec-garden"></h2>
       <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="30" step="0.5"><input id="gwn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
       <div class="row"><label data-i18n="lbl-depth"></label><input id="gd" type="range" min="3" max="30" step="0.5"><input id="gdn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="4" step="0.1"><input id="wx0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="4" step="0.1"><input id="wxbn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="4" step="0.1"><input id="wy0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
-      <div class="row"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="4" step="0.1"><input id="wytn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-x0"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="7" step="0.1"><input id="wx0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-xb"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="7" step="0.1"><input id="wxbn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-y0"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="7" step="0.1"><input id="wy0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-yt"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="7" step="0.1"><input id="wytn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
       <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="text" inputmode="decimal"><span class="unit">°</span></div>
       <p class="hint" data-i18n="hint-walls"></p>
     </div>
@@ -169,6 +176,11 @@
     <div class="group"><h2 data-i18n="sec-legend"></h2>
       <div class="legend" id="legendText"></div>
     </div>
+    <footer>
+      © 2026 Alexander Zabelyshenskiy ·
+      <a href="https://github.com/nomiknomik/shade-sail-simulator/blob/main/LICENSE.md" target="_blank" rel="noopener" data-i18n="footer-license"></a><br>
+      <a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">GitHub Repository</a>
+    </footer>
   </aside>
   <main id="stage"><div id="hud"></div><div id="dayHud"></div></main>
 </div>
@@ -218,10 +230,10 @@ const TRANSLATIONS = {
     'hint-sail-note': 'Mit der Maus zwischen die Pfosten ziehen. Seillängen = kürzeste Verbindung Ecke→Pfosten.',
     'lbl-width': 'Breite',
     'lbl-depth': 'Tiefe',
-    'lbl-wall-x0': 'Wand X=0',
-    'lbl-wall-xb': 'Wand X=−B',
-    'lbl-wall-y0': 'Wand Y=0',
-    'lbl-wall-yt': 'Wand Y=−T',
+    'lbl-wall-x0': 'Rechts (X=0)',
+    'lbl-wall-xb': 'Links (X=−B)',
+    'lbl-wall-y0': 'Hinten (Y=0)',
+    'lbl-wall-yt': 'Vorne (Y=−D)',
     'lbl-north': 'Norden °',
     'lbl-city': 'Ort',
     'city-manual': '— eigene Koordinaten —',
@@ -267,7 +279,8 @@ const TRANSLATIONS = {
     'sun-status': 'Status',
     'sun-day': 'Tag ☀️',
     'sun-night': 'Nacht 🌙',
-    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Boden <span class="dot" style="background:var(--sun)"></span>→ Norden <span class="dot" style="background:#ffdd00"></span>→ Sonne <span class="dot" style="background:var(--ref)"></span>Bezugspunkt<br>Pfosten 1–6 in eigenen Farben.',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Boden <span class="dot" style="background:#2266dd"></span>→ Norden <span class="dot" style="background:#ffdd00"></span>→ Sonne <span class="dot" style="background:var(--ref)"></span>Bezugspunkt<br>Pfosten 1–6 in eigenen Farben.',
+    'footer-license': 'Lizenzbedingungen',
     'import-ok': 'Import erfolgreich geladen.',
     'import-err': '⚠️ Import fehlgeschlagen: ',
     'reset-confirm': 'Alles auf Standard zurücksetzen?',
@@ -309,10 +322,10 @@ const TRANSLATIONS = {
     'hint-sail-note': 'Drag between the posts. Rope lengths = shortest corner→post distance.',
     'lbl-width': 'Width',
     'lbl-depth': 'Depth',
-    'lbl-wall-x0': 'Wall X=0',
-    'lbl-wall-xb': 'Wall X=−W',
-    'lbl-wall-y0': 'Wall Y=0',
-    'lbl-wall-yt': 'Wall Y=−D',
+    'lbl-wall-x0': 'Right (X=0)',
+    'lbl-wall-xb': 'Left (X=−W)',
+    'lbl-wall-y0': 'Back (Y=0)',
+    'lbl-wall-yt': 'Front (Y=−D)',
     'lbl-north': 'North °',
     'lbl-city': 'Location',
     'city-manual': '— custom coordinates —',
@@ -358,7 +371,8 @@ const TRANSLATIONS = {
     'sun-status': 'Status',
     'sun-day': 'Day ☀️',
     'sun-night': 'Night 🌙',
-    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Ground <span class="dot" style="background:var(--sun)"></span>→ North <span class="dot" style="background:#ffdd00"></span>→ Sun <span class="dot" style="background:var(--ref)"></span>Reference Point<br>Posts 1–6 in individual colors.',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Ground <span class="dot" style="background:#2266dd"></span>→ North <span class="dot" style="background:#ffdd00"></span>→ Sun <span class="dot" style="background:var(--ref)"></span>Reference Point<br>Posts 1–6 in individual colors.',
+    'footer-license': 'License Terms',
     'import-ok': 'Import loaded successfully.',
     'import-err': '⚠️ Import failed: ',
     'reset-confirm': 'Reset everything to default?',
@@ -400,10 +414,10 @@ const TRANSLATIONS = {
     'hint-sail-note': 'Перетащите между столбами. Длина верёвки = кратчайшее расстояние угол→столб.',
     'lbl-width': 'Ширина',
     'lbl-depth': 'Глубина',
-    'lbl-wall-x0': 'Стена X=0',
-    'lbl-wall-xb': 'Стена X=−Ш',
-    'lbl-wall-y0': 'Стена Y=0',
-    'lbl-wall-yt': 'Стена Y=−Г',
+    'lbl-wall-x0': 'Справа (X=0)',
+    'lbl-wall-xb': 'Слева (X=−Ш)',
+    'lbl-wall-y0': 'Сзади (Y=0)',
+    'lbl-wall-yt': 'Спереди (Y=−Г)',
     'lbl-north': 'Север °',
     'lbl-city': 'Место',
     'city-manual': '— свои координаты —',
@@ -449,7 +463,8 @@ const TRANSLATIONS = {
     'sun-status': 'Статус',
     'sun-day': 'День ☀️',
     'sun-night': 'Ночь 🌙',
-    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Земля <span class="dot" style="background:var(--sun)"></span>→ Север <span class="dot" style="background:#ffdd00"></span>→ Солнце <span class="dot" style="background:var(--ref)"></span>Базовая точка<br>Столбы 1–6 в индивидуальных цветах.',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Земля <span class="dot" style="background:#2266dd"></span>→ Север <span class="dot" style="background:#ffdd00"></span>→ Солнце <span class="dot" style="background:var(--ref)"></span>Базовая точка<br>Столбы 1–6 в индивидуальных цветах.',
+    'footer-license': 'Условия лицензии',
     'import-ok': 'Импорт загружен успешно.',
     'import-err': '⚠️ Ошибка импорта: ',
     'reset-confirm': 'Сбросить всё к настройкам по умолчанию?',
@@ -584,7 +599,7 @@ const furnGroup=new THREE.Group(); scene.add(furnGroup);
 const personGroup=new THREE.Group(); scene.add(personGroup);
 const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
 const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
-const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,0.02,0),4,0xf4a93c,0.9,0.5); scene.add(northArrow);
+const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,0.02,0),4,0x2266dd,0.9,0.5); scene.add(northArrow);
 const sunArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0.08,0),2,0xffdd00,0.5,0.3); sunArrow.visible=false; scene.add(sunArrow);
 const refMarker=new THREE.Group();
 const refPin=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6,8),new THREE.MeshStandardMaterial({color:0x22c3d6})); refPin.position.y=0.3;
@@ -943,7 +958,7 @@ function numRowHTML(label,cls,val,unit){
 function wireStaticUI(){
   $('gw').value=S.garden.w; $('gw').dataset.default=DEF.garden.w; linkId('gw','gwn',3,30,v=>{S.garden.w=v;buildGarden();updateAll();});
   $('gd').value=S.garden.d; $('gd').dataset.default=DEF.garden.d; linkId('gd','gdn',3,30,v=>{S.garden.d=v;buildGarden();updateAll();});
-  const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,4,v=>{S.garden.walls[key]=v;buildGarden();}); };
+  const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,7,v=>{S.garden.walls[key]=v;buildGarden();}); };
   wallRow('wx0','wx0n','x0'); wallRow('wxb','wxbn','xb'); wallRow('wy0','wy0n','y0'); wallRow('wyt','wytn','yt');
   $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
   const syncCity=()=>{ $('city').value=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; if(!$('city').value||$('city').selectedIndex<0) $('city').value='manual'; };
@@ -1083,7 +1098,8 @@ function handleClick(e){ raycaster.setFromCamera(ndc(e),camera);
   const fh=raycaster.intersectObjects(furnGroup.children,true);
   if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; if(o){ scrollToCard(`#furniture .card[data-fkey="${o.userData.furnKey}"]`); return; } }
   /* walls */
-  if(wallsGroup){ const wh=raycaster.intersectObjects(wallsGroup.children,false); if(wh.length){ scrollToCard('#group-garden'); return; } }
+  if(wallsGroup){ const wh=raycaster.intersectObjects(wallsGroup.children,false);
+    if(wh.length){ const wk=wh[0].object.userData.wallKey; scrollToCard(wk?`#row-wall-${wk}`:'#group-garden'); return; } }
 }
 function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,y:e.clientY}; raycaster.setFromCamera(ndc(e),camera);
   const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
