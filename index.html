@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.8 · DE/EN/RU · Ideale Segel-Position · Pfosten-Optimierung</div>
+      <div class="ver">Version 4.9 · DE/EN/RU · Ideale Segel-Position · Pfosten-Optimierung</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -1199,22 +1199,29 @@ function _runSailOptimizer(){
   /* Fallback: gesamter Garten, wenn Bewertungsrechteck leer */
   if(!cells.length){ for(let ix=0;ix<NX;ix++) for(let iy=0;iy<NY;iy++)
     cells.push({x:-hw+(ix+0.5)*(w/NX),z:-hd+(iy+0.5)*(d/NY)}); }
-  const H=3.0; /* Bewertungshöhe (flach) – Pfosten werden danach auf 3,0 m gesetzt */
-  /* Bodenschatten-Polygon: Segel flach auf Höhe H bei Position (cx,cz) und Rotation rotDeg */
-  function groundPolyFlat(s,cx,cz,rotDeg,dir){
+  const H_CTR=3.0; /* Mittelhöhe – Nordecke wird angehoben (mehr Schatten bei ~48°N) */
+  const tiltArr=[0,0.4,0.8]; /* Neigung: Höhendelta Nordecke vs. Süddecke (0=flach) */
+  /* Bodenschatten mit Nord-Süd-Neigung: math. Nachweis: Schattenbreite +2·tiltH·cot(Sonnenwinkel) */
+  function groundPolyWithTilt(s,cx,cz,rotDeg,tiltH,dir){
     const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
-    return sailLocalCorners(s).map(v=>{
-      const wx=cx+v.x*ca-v.z*sa,wz=cz+v.x*sa+v.z*ca;
-      return projToGround(new THREE.Vector3(wx,H,wz),dir); }); }
+    const lc=sailLocalCorners(s);
+    const worldZs=lc.map(v=>cz+v.x*sa+v.z*ca);
+    const minZ=Math.min(...worldZs),maxZ=Math.max(...worldZs);
+    const extZ=Math.max(0.01,(maxZ-minZ)/2);
+    const centerZ=(minZ+maxZ)/2;
+    return lc.map((v,i)=>{
+      const wx=cx+v.x*ca-v.z*sa,wz=worldZs[i];
+      /* Z negativ = Süden → Nordecke (wz>centerZ) bekommt +tiltH, Süddecke −tiltH */
+      const h=Math.max(1.5,Math.min(3.9,H_CTR+(wz-centerZ)/extZ*tiltH));
+      return projToGround(new THREE.Vector3(wx,h,wz),dir); }); }
   /* Score: summierte, über alle Zeitschritte gewichtete Bodenschattenfläche */
-  function scoreSailAt(s,cx,cz,rotDeg,excludePolys){
+  function scoreSailAt(s,cx,cz,rotDeg,tiltH,excludePolys){
     let sc=0;
     for(let ti=0;ti<sunDirs.length;ti++){
       const {dir,wgt}=sunDirs[ti];
-      const poly=groundPolyFlat(s,cx,cz,rotDeg,dir);
+      const poly=groundPolyWithTilt(s,cx,cz,rotDeg,tiltH,dir);
       for(const c of cells){
         if(!pointInPoly(c,poly)) continue;
-        /* Bereits durch frühere Segel beschattet? → nicht doppelt zählen */
         if(excludePolys&&excludePolys[ti]&&pointInPoly(c,excludePolys[ti])) continue;
         sc+=cellA*wgt; } }
     return sc; }
@@ -1230,13 +1237,12 @@ function _runSailOptimizer(){
   /* Greedy-Optimierung: Segel nacheinander, jedes nächste Segel maximiert Zusatz-Fläche */
   const results=[]; let prevPolysPerStep=null;
   for(const {si,s} of activeSails){
-    let best=-1,bx=0,bz=0,br=0;
-    for(const cx of cxArr) for(const cz of czArr) for(const rot of rotArr){
-      const sc=scoreSailAt(s,cx,cz,rot,prevPolysPerStep);
-      if(sc>best){ best=sc;bx=cx;bz=cz;br=rot; } }
-    results.push({si,s,cx:bx,cz:bz,rot:br});
-    /* Bodenschatten dieses Segels für die nächste Iteration merken */
-    prevPolysPerStep=sunDirs.map(({dir})=>groundPolyFlat(s,bx,bz,br,dir)); }
+    let best=-1,bx=0,bz=0,br=0,bt=0;
+    for(const cx of cxArr) for(const cz of czArr) for(const rot of rotArr) for(const tilt of tiltArr){
+      const sc=scoreSailAt(s,cx,cz,rot,tilt,prevPolysPerStep);
+      if(sc>best){ best=sc;bx=cx;bz=cz;br=rot;bt=tilt; } }
+    results.push({si,s,cx:bx,cz:bz,rot:br,tiltH:bt});
+    prevPolysPerStep=sunDirs.map(({dir})=>groundPolyWithTilt(s,bx,bz,br,bt,dir)); }
   /* Ecken-Positionen in Weltkoordinaten berechnen */
   const B=refWorld();
   for(const res of results){
@@ -1261,10 +1267,37 @@ function _runSailOptimizer(){
     clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
     for(const res of results) res.postIndices=res.postIndices.map(pi=>pi===mj?mi:(pi>mj?pi-1:pi));
     clusters.splice(mj,1); clusters.forEach((c,ci)=>c.postIdx=ci); }
-  /* Pfosten-Positionen setzen (3,0 m flach, im Bereich 2,0–3,9 m) */
+  /* Task 1: Pfosten auf Gartenwände snappen (nach Optimierung) */
+  function snapToWall(wx,wz){
+    const dW=Math.abs(wx+hw),dE=Math.abs(wx-hw),dS=Math.abs(wz+hd),dN=Math.abs(wz-hd);
+    const minD=Math.min(dW,dE,dS,dN);
+    if(minD===dW) return {wx:-hw,wz:Math.max(-hd,Math.min(hd,wz))};
+    if(minD===dE) return {wx:hw, wz:Math.max(-hd,Math.min(hd,wz))};
+    if(minD===dS) return {wx:Math.max(-hw,Math.min(hw,wx)),wz:-hd};
+    return {wx:Math.max(-hw,Math.min(hw,wx)),wz:hd};
+  }
+  for(const c of clusters){ const sn=snapToWall(c.wx,c.wz); c.wx=sn.wx; c.wz=sn.wz; }
+  /* Task 2: Pfostenhöhen aus Nord-Süd-Neigung berechnen */
+  const postHSum=new Array(clusters.length).fill(0);
+  const postHCnt=new Array(clusters.length).fill(0);
+  for(const res of results){
+    const {s,cx,cz,rot,tiltH}=res;
+    const ang=rot*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    const lc=sailLocalCorners(s);
+    const worldZs=lc.map(v=>cz+v.x*sa+v.z*ca);
+    const minZ=Math.min(...worldZs),maxZ=Math.max(...worldZs);
+    const extZ=Math.max(0.01,(maxZ-minZ)/2);
+    const centerZ=(minZ+maxZ)/2;
+    for(let k=0;k<res.postIndices.length;k++){
+      const ci=res.postIndices[k];
+      const wz=clusters[ci].wz; /* Welt-Z nach Wall-Snap */
+      const h=Math.max(2.0,Math.min(3.9,H_CTR+(wz-centerZ)/extZ*tiltH));
+      postHSum[ci]+=h; postHCnt[ci]++; } }
+  /* Pfosten an Wänden setzen (2,0–3,9 m Höhe, 1 Nachkommastelle) */
   for(let ci=0;ci<clusters.length;ci++){
     const {wx,wz}=clusters[ci];
-    S.points[ci]={ x:wx-B.x, y:wz-B.z, h:3.0 }; }
+    const h=postHCnt[ci]>0 ? postHSum[ci]/postHCnt[ci] : H_CTR;
+    S.points[ci]={ x:wx-B.x, y:wz-B.z, h:Math.round(Math.max(2.0,Math.min(3.9,h))*10)/10 }; }
   /* Segel-Zuweisung und Offset zurücksetzen */
   for(const res of results){
     S.sails[res.si].posts=res.postIndices;
