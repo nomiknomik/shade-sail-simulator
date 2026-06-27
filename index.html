@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.7 · DE/EN/RU · Pfosten-Optimierung · Sonnen-Fix · Positions-Labels</div>
+      <div class="ver">Version 4.8 · DE/EN/RU · Ideale Segel-Position · Pfosten-Optimierung</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -160,6 +160,10 @@
       <div style="margin-top:8px">
         <button class="btn secondary" id="btnOptimizePosts" style="width:100%" data-i18n="btn-optimize-posts"></button>
       </div>
+      <div style="margin-top:6px">
+        <button class="btn" id="btnOptimizeSails" style="width:100%" data-i18n="btn-optimize-sails"></button>
+      </div>
+      <p class="hint" data-i18n="hint-optimize-sails"></p>
     </div>
 
     <div class="group">
@@ -226,9 +230,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const DEG=Math.PI/180;
 /* Reiner Anzeige-Offset für den blauen Nordpfeil (beeinflusst NICHT die Sonnen-/Schattenberechnung).
-   +90° (Math.PI/2) dreht den Pfeil im Uhrzeigersinn betrachtet so, dass er zur rechten Wand zeigt;
-   Vorzeichen umkehren, falls der Pfeil in die falsche Richtung zeigt. */
-const NORTH_VIS_OFFSET=Math.PI/2;
+   Math.PI (180°) dreht den Pfeil so, dass er korrekt zum geografischen Norden zeigt. */
+const NORTH_VIS_OFFSET=Math.PI;
 const STORE_KEY='sonnensegel-v7';
 const POST_HEX=['#e74c3c','#f39c12','#f1c40f','#2ecc71','#3498db','#9b59b6'];
 const num=(v,def)=>{ v=+v; return isNaN(v)?def:v; };
@@ -346,6 +349,8 @@ const TRANSLATIONS = {
     'hint-person': 'Im 3D mit der Maus verschiebbar. Höhe als Zahleneingabe.',
     'person-label': 'Person',
     'lbl-person-h': 'Körpergröße',
+    'btn-optimize-sails': '🎯 Ideale Segel-Position berechnen',
+    'hint-optimize-sails': 'Ermittelt die optimale Position und Ausrichtung der aktiven Segel für maximale Beschattung (10–18 Uhr). Pfosten werden anschließend an den Segelecken positioniert (Höhe 3,0 m, anpassbar). Segel können sich einen Pfosten teilen.',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -456,6 +461,8 @@ const TRANSLATIONS = {
     'hint-person': 'Drag in 3D view. Height via number input.',
     'person-label': 'Person',
     'lbl-person-h': 'Height',
+    'btn-optimize-sails': '🎯 Calculate ideal sail position',
+    'hint-optimize-sails': 'Finds the optimal position and orientation of the active sails for maximum shade coverage (10–18h). Posts are placed at sail corners (height 3.0 m, adjustable). Sails may share a post.',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -566,6 +573,8 @@ const TRANSLATIONS = {
     'hint-person': 'Перетаскивается в 3D. Рост задаётся числом.',
     'person-label': 'Человек',
     'lbl-person-h': 'Рост',
+    'btn-optimize-sails': '🎯 Вычислить идеальное положение парусов',
+    'hint-optimize-sails': 'Находит оптимальное положение и ориентацию активных парусов для максимальной тени (10–18ч). Столбы размещаются в углах парусов (высота 3,0 м, регулируется). Паруса могут иметь общий столб.',
   }
 };
 
@@ -922,6 +931,22 @@ function buildDimensions(){
   /* Pfostenhöhen vertikal neben jedem Pfosten */
   S.points.forEach((p,i)=>{ const top=poleTop(i); const x=top.x+0.24,z=top.z+0.24;
     addDimLine(labelsGroup,new THREE.Vector3(x,0.02,z),new THREE.Vector3(x,Math.max(0.2,top.y),z),'H '+fmt(p.h)+' m',POST_HEX[i]); });
+  /* Positions-Pfeile: X- und Y-Abstände vom Referenzpunkt (L-Form am Boden) */
+  const Bref=refWorld(); const Bx=Bref.x,Bz=Bref.z,gY=0.05;
+  S.points.forEach((p,i)=>{
+    if(Math.abs(p.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+p.x,gY,Bz),'X '+fmt(p.x)+' m',POST_HEX[i]);
+    if(Math.abs(p.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+p.x,gY,Bz),new THREE.Vector3(Bx+p.x,gY,Bz+p.y),'Y '+fmt(p.y)+' m',POST_HEX[i]);
+  });
+  const tabF=S.furniture.table;
+  if(tabF&&tabF.on){
+    if(Math.abs(tabF.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+tabF.x,gY,Bz),'X '+fmt(tabF.x)+' m','#d9a066');
+    if(Math.abs(tabF.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+tabF.x,gY,Bz),new THREE.Vector3(Bx+tabF.x,gY,Bz+tabF.y),'Y '+fmt(tabF.y)+' m','#d9a066');
+  }
+  const pgF=S.furniture.pergola;
+  if(pgF&&pgF.on){
+    if(Math.abs(pgF.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+pgF.x,gY,Bz),'X '+fmt(pgF.x)+' m','#aab3bd');
+    if(Math.abs(pgF.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+pgF.x,gY,Bz),new THREE.Vector3(Bx+pgF.x,gY,Bz+pgF.y),'Y '+fmt(pgF.y)+' m','#aab3bd');
+  }
   /* Aktive Segel: Kantenlängen zwischen den aufgehängten Ecken */
   S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s);
     for(let k=0;k<c.length;k++){ const a=c[k],b=c[(k+1)%c.length];
@@ -1146,6 +1171,107 @@ function optimizePostAssignment(){
   }
   if(bestAssign){ activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=bestAssign[i]; }); buildSailEditors(); updateAll(); touch(); }
 }
+
+/* ---- Ideale Segel-Positionierung (unabhängig von Pfosten) ---- */
+function optimizeSailPositions(){
+  const btn=document.getElementById('btnOptimizeSails');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ …'; }
+  setTimeout(()=>{
+    _runSailOptimizer();
+    if(btn){ btn.disabled=false; applyTranslations(); }
+  },16);
+}
+function _runSailOptimizer(){
+  const {w,d}=S.garden; const hw=w/2,hd=d/2;
+  const Rw=evalRectWorld(); const useRect=!!(Rw&&S.evalRect.on);
+  /* Sonnenrichtungen vorberechnen (grob, Schrittweite 30 min) */
+  const sunDirs=[];
+  for(let m=600;m<=1080;m+=30){ const {dir,alt}=sunDirAtMin(m);
+    if(alt>0&&dir.y>0.02) sunDirs.push({dir,wgt:(m===600||m===1080)?0.5:1}); }
+  if(!sunDirs.length) return;
+  /* Bewertungsraster */
+  const NX=15,NY=15; const cellA=(w/NX)*(d/NY);
+  const cells=[];
+  for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+    for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+      const inRect=useRect?(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1):true;
+      if(inRect) cells.push({x:cx,z:cz}); } }
+  /* Fallback: gesamter Garten, wenn Bewertungsrechteck leer */
+  if(!cells.length){ for(let ix=0;ix<NX;ix++) for(let iy=0;iy<NY;iy++)
+    cells.push({x:-hw+(ix+0.5)*(w/NX),z:-hd+(iy+0.5)*(d/NY)}); }
+  const H=3.0; /* Bewertungshöhe (flach) – Pfosten werden danach auf 3,0 m gesetzt */
+  /* Bodenschatten-Polygon: Segel flach auf Höhe H bei Position (cx,cz) und Rotation rotDeg */
+  function groundPolyFlat(s,cx,cz,rotDeg,dir){
+    const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    return sailLocalCorners(s).map(v=>{
+      const wx=cx+v.x*ca-v.z*sa,wz=cz+v.x*sa+v.z*ca;
+      return projToGround(new THREE.Vector3(wx,H,wz),dir); }); }
+  /* Score: summierte, über alle Zeitschritte gewichtete Bodenschattenfläche */
+  function scoreSailAt(s,cx,cz,rotDeg,excludePolys){
+    let sc=0;
+    for(let ti=0;ti<sunDirs.length;ti++){
+      const {dir,wgt}=sunDirs[ti];
+      const poly=groundPolyFlat(s,cx,cz,rotDeg,dir);
+      for(const c of cells){
+        if(!pointInPoly(c,poly)) continue;
+        /* Bereits durch frühere Segel beschattet? → nicht doppelt zählen */
+        if(excludePolys&&excludePolys[ti]&&pointInPoly(c,excludePolys[ti])) continue;
+        sc+=cellA*wgt; } }
+    return sc; }
+  const activeSails=S.sails.map((s,i)=>({si:i,s})).filter(({s})=>s.on);
+  if(!activeSails.length) return;
+  /* Raster-Parameter */
+  const margin=0.5;
+  const xSt=Math.max(0.45,w/18),zSt=Math.max(0.45,d/18);
+  const cxArr=[],czArr=[],rotArr=[];
+  for(let x=-hw+margin;x<=hw-margin+0.01;x+=xSt) cxArr.push(x);
+  for(let z=-hd+margin;z<=hd-margin+0.01;z+=zSt) czArr.push(z);
+  for(let r=0;r<180;r+=15) rotArr.push(r);
+  /* Greedy-Optimierung: Segel nacheinander, jedes nächste Segel maximiert Zusatz-Fläche */
+  const results=[]; let prevPolysPerStep=null;
+  for(const {si,s} of activeSails){
+    let best=-1,bx=0,bz=0,br=0;
+    for(const cx of cxArr) for(const cz of czArr) for(const rot of rotArr){
+      const sc=scoreSailAt(s,cx,cz,rot,prevPolysPerStep);
+      if(sc>best){ best=sc;bx=cx;bz=cz;br=rot; } }
+    results.push({si,s,cx:bx,cz:bz,rot:br});
+    /* Bodenschatten dieses Segels für die nächste Iteration merken */
+    prevPolysPerStep=sunDirs.map(({dir})=>groundPolyFlat(s,bx,bz,br,dir)); }
+  /* Ecken-Positionen in Weltkoordinaten berechnen */
+  const B=refWorld();
+  for(const res of results){
+    const {s,cx,cz,rot}=res; const ang=rot*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    res.corners=sailLocalCorners(s).map(v=>({wx:cx+v.x*ca-v.z*sa,wz:cz+v.x*sa+v.z*ca})); }
+  /* Cluster: Ecken < 0,4 m voneinander → gemeinsamer Pfosten */
+  const clusters=[];
+  for(const res of results){ res.postIndices=[];
+    for(const c of res.corners){
+      let found=-1;
+      for(let ci=0;ci<clusters.length;ci++){
+        const dx=clusters[ci].wx-c.wx,dz=clusters[ci].wz-c.wz;
+        if(Math.sqrt(dx*dx+dz*dz)<0.4){ found=ci; break; } }
+      if(found>=0){ res.postIndices.push(found); }
+      else{ clusters.push({wx:c.wx,wz:c.wz,postIdx:clusters.length}); res.postIndices.push(clusters.length-1); } } }
+  /* Falls mehr Cluster als Pfosten: nächste Paare zusammenführen */
+  while(clusters.length>S.points.length){
+    let minD=Infinity,mi=0,mj=1;
+    for(let i=0;i<clusters.length;i++) for(let j=i+1;j<clusters.length;j++){
+      const dx=clusters[i].wx-clusters[j].wx,dz=clusters[i].wz-clusters[j].wz,dd=dx*dx+dz*dz;
+      if(dd<minD){ minD=dd;mi=i;mj=j; } }
+    clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
+    for(const res of results) res.postIndices=res.postIndices.map(pi=>pi===mj?mi:(pi>mj?pi-1:pi));
+    clusters.splice(mj,1); clusters.forEach((c,ci)=>c.postIdx=ci); }
+  /* Pfosten-Positionen setzen (3,0 m flach, im Bereich 2,0–3,9 m) */
+  for(let ci=0;ci<clusters.length;ci++){
+    const {wx,wz}=clusters[ci];
+    S.points[ci]={ x:wx-B.x, y:wz-B.z, h:3.0 }; }
+  /* Segel-Zuweisung und Offset zurücksetzen */
+  for(const res of results){
+    S.sails[res.si].posts=res.postIndices;
+    S.sails[res.si].dx=0; S.sails[res.si].dz=0; S.sails[res.si].rot=0; }
+  buildPointEditors(); buildSailEditors(); updateAll(); touch();
+}
+
 function renderDayShade(){
   const r=computeDayShade(); S.shadeAnalysis=r;
   const out=document.getElementById('dayShade'); if(!out) return;
@@ -1257,6 +1383,7 @@ function wireStaticUI(){
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
   wireEvalRectInputs();
   const bo=$('btnOptimizePosts'); if(bo) bo.onclick=()=>optimizePostAssignment();
+  const bs=$('btnOptimizeSails'); if(bs) bs.onclick=()=>optimizeSailPositions();
 }
 function syncEvalRectInputs(){
   const r=S.evalRect;
