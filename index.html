@@ -79,7 +79,6 @@
   #histHud button{background:rgba(17,22,28,.8);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 13px;font-size:15px;line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
   #histHud button:hover:not(:disabled){border-color:var(--sun);color:var(--sun)}
   #histHud button:disabled{opacity:.35;cursor:default}
-  #btnDrawRect.active{background:#f1c40f;color:#1a1206;border-color:#f1c40f}
   @keyframes card-flash{ 0%{box-shadow:0 0 0 2px var(--sun)} 100%{box-shadow:none} }
   .card.highlight{ animation:card-flash .9s ease-out forwards }
   .group.highlight{ animation:card-flash .9s ease-out forwards }
@@ -92,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.5 · DE/EN/RU · Auswertungs-Rechteck · Undo/Redo · Schatten-Logik</div>
+      <div class="ver">Version 4.6 · DE/EN/RU · Pfosten-Optimierung · Auswertungs-Bereich Eingabe · 40× Undo</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -158,6 +157,9 @@
       <h2 data-i18n="sec-sails"></h2>
       <p class="hint" data-i18n="hint-sails"></p>
       <div id="sails"></div>
+      <div style="margin-top:8px">
+        <button class="btn secondary" id="btnOptimizePosts" style="width:100%" data-i18n="btn-optimize-posts"></button>
+      </div>
     </div>
 
     <div class="group">
@@ -181,9 +183,15 @@
       <h2 data-i18n="sec-dayshade"></h2>
       <p class="hint" data-i18n="hint-dayshade"></p>
       <div class="readout" id="dayShade"></div>
-      <div class="row" style="gap:8px;margin-top:8px">
-        <button class="btn secondary" id="btnDrawRect" style="flex:1" data-i18n="btn-drawrect"></button>
-        <button class="btn secondary" id="btnClearRect" style="flex:0 0 92px" data-i18n="btn-clearrect"></button>
+      <div class="row" style="margin-top:8px">
+        <label data-i18n="lbl-eval-on"></label>
+        <input id="evalRectOn" type="checkbox" style="accent-color:var(--sun)">
+      </div>
+      <div id="evalRectInputs">
+        <div class="row"><label data-i18n="lbl-eval-cx"></label><input id="evalCx" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-cy"></label><input id="evalCy" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-w"></label><input id="evalW" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-h"></label><input id="evalH" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
       </div>
       <p class="hint" data-i18n="rect-hint"></p>
     </div>
@@ -251,7 +259,13 @@ const TRANSLATIONS = {
     'btn-redo': 'Wiederholen (Strg+Y)',
     'btn-drawrect': '▣ Bereich aufziehen',
     'btn-clearrect': 'Bereich löschen',
-    'rect-hint': 'Klick „Bereich aufziehen", dann auf dem Boden ein Rechteck aufziehen. Es begrenzt die Auswertung zusätzlich.',
+    'btn-optimize-posts': '🔍 Pfosten-Zuweisung optimieren',
+    'lbl-eval-on':   'Bereich aktiv',
+    'lbl-eval-cx':   'Mitte X',
+    'lbl-eval-cy':   'Mitte Y',
+    'lbl-eval-w':    'Breite',
+    'lbl-eval-h':    'Tiefe',
+    'rect-hint':     'Mittelpunkt und Maße des Auswertungsbereichs eingeben.',
     'dayshade-rect': 'Im Rechteck',
     'hint-save': 'Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Segel & Möbel lassen sich im 3D mit der Maus verschieben.',
     'hint-walls': 'Vier Wände einzeln einstellbar (0 m = keine Wand). Bezugspunkt fest auf Ecke 3 (+X/+Y).',
@@ -355,7 +369,13 @@ const TRANSLATIONS = {
     'btn-redo': 'Redo (Ctrl+Y)',
     'btn-drawrect': '▣ Draw area',
     'btn-clearrect': 'Clear area',
-    'rect-hint': 'Click "Draw area", then drag a rectangle on the ground. It additionally limits the analysis.',
+    'btn-optimize-posts': '🔍 Optimize post assignment',
+    'lbl-eval-on':   'Area active',
+    'lbl-eval-cx':   'Center X',
+    'lbl-eval-cy':   'Center Y',
+    'lbl-eval-w':    'Width',
+    'lbl-eval-h':    'Depth',
+    'rect-hint':     'Enter center point and dimensions of the evaluation area.',
     'dayshade-rect': 'In rectangle',
     'hint-save': 'Auto-saved in browser. Double-click a slider to reset to default. Sails & furniture can be dragged in 3D.',
     'hint-walls': 'Four walls individually adjustable (0 m = no wall). Reference point fixed at Corner 3 (+X/+Y).',
@@ -459,7 +479,13 @@ const TRANSLATIONS = {
     'btn-redo': 'Повторить (Ctrl+Y)',
     'btn-drawrect': '▣ Задать область',
     'btn-clearrect': 'Удалить область',
-    'rect-hint': 'Нажмите «Задать область», затем растяните прямоугольник по полу. Он дополнительно ограничивает анализ.',
+    'btn-optimize-posts': '🔍 Оптимизировать назначение столбов',
+    'lbl-eval-on':   'Область активна',
+    'lbl-eval-cx':   'Центр X',
+    'lbl-eval-cy':   'Центр Y',
+    'lbl-eval-w':    'Ширина',
+    'lbl-eval-h':    'Глубина',
+    'rect-hint':     'Укажите центр и размеры области оценки.',
     'dayshade-rect': 'В прямоугольнике',
     'hint-save': 'Автосохранение в браузере. Двойной клик по ползунку = сброс. Паруса и мебель можно перетаскивать в 3D.',
     'hint-walls': 'Четыре стены регулируются отдельно (0 м = нет стены). Базовая точка зафиксирована на Угол 3 (+X/+Y).',
@@ -581,11 +607,11 @@ window.setLang=function(lang){
 function defaultState(){
   return {
     _pivotCorner:true,
-    garden:{ w:9.5, d:9.5, walls:{ x0:6.3, xb:2.4, y0:6.3, yt:2.4 }, wallOpacity:1, north:178 },
+    garden:{ w:9.5, d:9.5, walls:{ x0:6.3, xb:2.4, y0:6.3, yt:2.4 }, wallOpacity:0.35, north:178 },
     loc:{ lat:48.4636, lon:8.4111 },
     dateStr:new Date().toISOString().slice(0,10),
-    timeMin:674,
-    showPostLabels:false,
+    timeMin:845,
+    showPostLabels:true,
     showDims:false,
     ref:{ corner:2, ox:0, oy:0, oz:0 },
     points:[
@@ -597,17 +623,17 @@ function defaultState(){
       { x:2.5,  y:7.5,  h:3   },
     ],
     sails:[
-      { on:true,  shape:3, bw:5.8, bl:3.6, a:5, b:5, c:7, dx:1.2868314808985237, dz:-0.7441931775259615, rot:0, posts:[4,0,2], color:'#c0392b', opacity:1 },
-      { on:false, shape:3, bw:3,   bl:3,   a:3, b:3, c:3, dx:-0.5338480130976946, dz:0.8526257948434761, rot:0, posts:[1,3,4], color:'#2c6fbb', opacity:1 },
+      { on:true,  shape:3, bw:5.8, bl:3.6, a:5,   b:5,   c:7,   dx:0.35095352384828365,  dz:-0.3442153324172601,  rot:0, posts:[3,0,1], color:'#c0392b', opacity:0.6 },
+      { on:true,  shape:3, bw:3,   bl:3,   a:3.6, b:3.6, c:5.1, dx:0.5073062153587451,   dz:-1.37376570489166,    rot:9, posts:[4,0,2], color:'#2c6fbb', opacity:1   },
     ],
     furniture:{
-      table:  { on:true, x:-2.7527390952459085, y:-4.37908062646546,  yaw:0,   tw:0.9, tl:1.58, th:0.74 },
-      chair1: { on:true, x:-2.9305071385166768, y:-3.6133698799620877, yaw:90 },
-      chair2: { on:true, x:-1.7993745567905344, y:-3.606782007046153,  yaw:-90 },
-      pergola:{ on:true, x:-8.2, y:-3.7, yaw:0, pw:2.9, pl:2.9, ph:2.4 },
+      table:  { on:true, x:-2.479421015118292,    y:-4.848058999767439,    yaw:0,   tw:0.9, tl:1.58, th:0.74 },
+      chair1: { on:true, x:-2.9305071385166768,   y:-3.6133698799620877,   yaw:90  },
+      chair2: { on:true, x:-1.7993745567905344,   y:-3.606782007046153,    yaw:-90 },
+      pergola:{ on:true, x:-8.2,                  y:-3.7,                  yaw:0,   pw:2.9, pl:2.9, ph:2.4 },
     },
     person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
-    evalRect:{ on:false, x0:0, y0:0, x1:0, y1:0 },
+    evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
   };
 }
 
@@ -1056,6 +1082,52 @@ function computeDayShade(){
   res.total_rect_m2h=ROUND(res.total_rect_m2h); res.total_rect_avg_m2=ROUND(res.total_rect_avg_m2);
   return res;
 }
+function optimizePostAssignment(){
+  const activeSails=S.sails.map((s,i)=>({idx:i,shape:s.shape})).filter((_,i)=>S.sails[i].on);
+  if(!activeSails.length) return;
+  function perms(arr,r){
+    if(r===0) return [[]];
+    return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));
+  }
+  function fastScore(assignment){
+    const orig=activeSails.map(s=>[...S.sails[s.idx].posts]);
+    activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=assignment[i]; });
+    const start=600,end=1080,step=30;
+    const {w,d}=S.garden; const hw=w/2,hd=d/2;
+    const NX=20,NY=20; const cellA=(w/NX)*(d/NY);
+    const Rw=evalRectWorld(); let score=0;
+    for(let m=start;m<=end;m+=step){
+      const {dir,alt}=sunDirAtMin(m); if(!(alt>0&&dir.y>0.02)) continue;
+      const wgt=(m===start||m===end)?0.5:1;
+      const polys=activeSails.map(s=>sailGroundPoly(S.sails[s.idx],dir));
+      for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+        for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+          if(Rw&&!(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1)) continue;
+          const pt={x:cx,z:cz};
+          for(const poly of polys){ if(pointInPoly(pt,poly)){ score+=cellA*wgt; break; } }
+        }
+      }
+    }
+    activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=orig[i]; });
+    return score;
+  }
+  const allPosts=[...Array(S.points.length).keys()];
+  let best=-1,bestAssign=null;
+  if(activeSails.length===1){
+    for(const p of perms(allPosts,activeSails[0].shape)){
+      const sc=fastScore([p]); if(sc>best){best=sc;bestAssign=[p];}
+    }
+  } else if(activeSails.length>=2){
+    const [s0,s1]=activeSails;
+    for(const p0 of perms(allPosts,s0.shape)){
+      const rem=allPosts.filter(i=>!p0.includes(i));
+      for(const p1 of perms(rem,Math.min(s1.shape,rem.length))){
+        const sc=fastScore([p0,p1]); if(sc>best){best=sc;bestAssign=[p0,p1];}
+      }
+    }
+  }
+  if(bestAssign){ activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=bestAssign[i]; }); buildSailEditors(); updateAll(); touch(); }
+}
 function renderDayShade(){
   const r=computeDayShade(); S.shadeAnalysis=r;
   const out=document.getElementById('dayShade'); if(!out) return;
@@ -1085,12 +1157,8 @@ function buildEvalRect(){ evalRectGroup.clear(); const Rw=evalRectWorld(); if(!R
   const y=0.045; const pts=[ new THREE.Vector3(Rw.x0,y,Rw.z0), new THREE.Vector3(Rw.x1,y,Rw.z0),
     new THREE.Vector3(Rw.x1,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z0) ];
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineDashedMaterial({color:0xf1c40f,dashSize:0.25,gapSize:0.18,depthTest:false,transparent:true}));
-  line.computeLineDistances(); line.renderOrder=997; evalRectGroup.add(line);
-  const arr=new Float32Array([ Rw.x0,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z1,
-    Rw.x0,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z1, Rw.x0,y-0.01,Rw.z1 ]);
-  const fg=new THREE.BufferGeometry(); fg.setAttribute('position',new THREE.BufferAttribute(arr,3));
-  evalRectGroup.add(new THREE.Mesh(fg,new THREE.MeshBasicMaterial({color:0xf1c40f,transparent:true,opacity:0.09,side:THREE.DoubleSide,depthWrite:false})));
+    new THREE.LineDashedMaterial({color:0xf1c40f,dashSize:0.25,gapSize:0.18,depthTest:true,linewidth:2}));
+  line.computeLineDistances(); evalRectGroup.add(line);
 }
 function updateRef(){ refMarker.position.copy(refWorld()); }
 function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
@@ -1103,8 +1171,8 @@ function touch(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(()
 function saveState(){ const j=JSON.stringify(S); try{ localStorage.setItem(STORE_KEY,j); }catch(e){} try{ document.cookie=STORE_KEY+'='+encodeURIComponent(j).slice(0,3900)+';path=/;max-age=31536000;SameSite=Lax'; }catch(e){} }
 function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return JSON.parse(v); }catch(e){} try{ const m=document.cookie.match('(?:^|;)\\s*'+STORE_KEY+'=([^;]*)'); if(m) return JSON.parse(decodeURIComponent(m[1])); }catch(e){} return null; }
 
-/* ---- Undo/Redo (bis 20 Schritte zurück) ---- */
-const HIST_MAX=21; /* aktueller Stand + 20 frühere */
+/* ---- Undo/Redo (bis 40 Schritte zurück) ---- */
+const HIST_MAX=41; /* aktueller Stand + 40 frühere */
 let history=[], hidx=-1, suppressHistory=false;
 function snapshot(){ if(suppressHistory) return; const j=JSON.stringify(S);
   if(history[hidx]===j) return;
@@ -1169,6 +1237,33 @@ function wireStaticUI(){
   const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
   const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
+  wireEvalRectInputs();
+  const bo=$('btnOptimizePosts'); if(bo) bo.onclick=()=>optimizePostAssignment();
+}
+function syncEvalRectInputs(){
+  const r=S.evalRect;
+  const x0=r.x0||0, x1=r.x1||0, y0=r.y0||0, y1=r.y1||0;
+  const cx=(x0+x1)/2, cy=(y0+y1)/2;
+  const w=Math.abs(x1-x0), h=Math.abs(y1-y0);
+  const eron=$('evalRectOn'), ecx=$('evalCx'), ecy=$('evalCy'), ew=$('evalW'), eh=$('evalH');
+  if(eron) eron.checked=!!r.on;
+  if(ecx) ecx.value=fmt(cx,2).replace(/,?0+$/,'');
+  if(ecy) ecy.value=fmt(cy,2).replace(/,?0+$/,'');
+  if(ew)  ew.value=fmt(w===0?3:w,2).replace(/,?0+$/,'');
+  if(eh)  eh.value=fmt(h===0?3:h,2).replace(/,?0+$/,'');
+}
+function wireEvalRectInputs(){
+  function applyEval(){
+    const cx=pn($('evalCx').value), cy=pn($('evalCy').value);
+    const w=Math.max(0.1,pn($('evalW').value)), h=Math.max(0.1,pn($('evalH').value));
+    S.evalRect.x0=cx-w/2; S.evalRect.x1=cx+w/2;
+    S.evalRect.y0=cy-h/2; S.evalRect.y1=cy+h/2;
+    buildEvalRect(); renderDayShade(); touch();
+  }
+  const eron=$('evalRectOn');
+  if(eron){ eron.checked=S.evalRect.on; eron.onchange=()=>{ S.evalRect.on=eron.checked; buildEvalRect(); renderDayShade(); touch(); syncEvalRectInputs(); }; }
+  ['evalCx','evalCy','evalW','evalH'].forEach(id=>{ const el=$(id); if(el) el.onchange=applyEval; });
+  syncEvalRectInputs();
 }
 function setTimeInputs(){ const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0'); $('timeInput').value=`${hh}:${mm}`; }
 
@@ -1177,8 +1272,7 @@ $('play').onclick=()=>{ playing=!playing; $('play').textContent=playing?t('btn-p
 function loopPlay(){ if(!playing) return; S.timeMin=(S.timeMin+4)%1440; $('time').value=S.timeMin; setTimeInputs(); updateSun(); setTimeout(()=>requestAnimationFrame(loopPlay),40); }
 $('now').onclick=()=>{ const n=new Date(); S.dateStr=n.toISOString().slice(0,10); S.timeMin=n.getHours()*60+n.getMinutes(); $('date').value=S.dateStr; $('time').value=S.timeMin; setTimeInputs(); updateSun(); touch(); };
 $('undoBtn').onclick=undo; $('redoBtn').onclick=redo;
-$('btnDrawRect').onclick=()=>setDrawRect(!drawingRect);
-$('btnClearRect').onclick=()=>{ S.evalRect.on=false; setDrawRect(false); buildEvalRect(); renderDayShade(); touch(); };
+// btnDrawRect und btnClearRect entfernt; Steuerung erfolgt über evalRectOn-Checkbox
 window.addEventListener('keydown',e=>{ if(/INPUT|SELECT|TEXTAREA/.test((e.target&&e.target.tagName)||'')) return;
   const k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){ e.preventDefault(); undo(); }
@@ -1281,15 +1375,14 @@ $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; co
   r.readAsText(file); e.target.value=''; };
 $('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); snapshot(); } };
 
-function refreshUI(){ applyTranslations(); wireStaticUI(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
+function refreshUI(){ applyTranslations(); wireStaticUI(); syncEvalRectInputs(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
 
 function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 window.addEventListener('resize',onResize);
 function animate(){ requestAnimationFrame(animate); controls.update(); updateLabelScales(); renderer.render(scene,camera); }
 
 /* ---- Maus-Drag & Click-to-Scroll ---- */
-let drag=null; let pointerDownPos=null; let drawingRect=false;
-function setDrawRect(on){ drawingRect=on; renderer.domElement.style.cursor=on?'crosshair':''; const b=document.getElementById('btnDrawRect'); if(b) b.classList.toggle('active',on); }
+let drag=null; let pointerDownPos=null;
 function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
 function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
 function scrollToCard(selector){ const el=document.querySelector(selector); if(!el) return; el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight'); }
@@ -1311,14 +1404,12 @@ function handleClick(e){ raycaster.setFromCamera(ndc(e),camera);
     if(wh.length){ const wk=wh[0].object.userData.wallKey; scrollToCard(wk?`#row-wall-${wk}`:'#group-garden'); return; } }
 }
 function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,y:e.clientY}; raycaster.setFromCamera(ndc(e),camera);
-  /* Auswertungs-Rechteck aufziehen (hat Vorrang) */
-  if(drawingRect){ const pt=groundPoint(e,0); if(pt){ const B=refWorld();
-    S.evalRect.on=true; S.evalRect.x0=pt.x-B.x; S.evalRect.y0=pt.z-B.z; S.evalRect.x1=S.evalRect.x0; S.evalRect.y1=S.evalRect.y0;
-    drag={ type:'rect' }; controls.enabled=false; buildEvalRect(); return; } }
   /* Möbel & Person zuerst prüfen, damit sie auch UNTER einem Segel greifbar bleiben */
   const fh=raycaster.intersectObjects(furnGroup.children,true);
-  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; const pt=groundPoint(e,0);
-    if(o && pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; } }
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent;
+    if(o && o.userData.furnKey!=='table' && o.userData.furnKey!=='pergola'){
+      const pt=groundPoint(e,0); if(pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; }
+    } }
   /* person drag */
   const ph=raycaster.intersectObjects(personGroup.children,false);
   if(ph.length){ const pt=groundPoint(e,0); if(pt){ drag={ type:'person', last:pt }; controls.enabled=false; return; } }
@@ -1327,8 +1418,6 @@ function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,
   if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
 }
 function onPointerMove(e){ if(!drag) return;
-  if(drag.type==='rect'){ const pt=groundPoint(e,0); if(pt){ const B=refWorld();
-      S.evalRect.x1=pt.x-B.x; S.evalRect.y1=pt.z-B.z; buildEvalRect(); } return; }
   if(drag.type==='sail'){ const pt=groundPoint(e,drag.y); if(pt){ const s=S.sails[drag.si];
       s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
       const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;
@@ -1338,11 +1427,8 @@ function onPointerMove(e){ if(!drag) return;
   else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
       buildFurniture(); buildLabels(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
-function onPointerUp(e){ const wasDrag=!!drag; const wasRect=drag&&drag.type==='rect'; drag=null; controls.enabled=true;
-  if(wasRect){ setDrawRect(false);
-    const r=S.evalRect; if(Math.abs(r.x1-r.x0)<0.3||Math.abs(r.y1-r.y0)<0.3){ r.on=false; buildEvalRect(); }
-    renderDayShade(); touch(); pointerDownPos=null; return; }
-  if(wasDrag) renderDayShade();
+function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
+  if(wasDrag){ renderDayShade(); }
   else if(pointerDownPos && e && Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y)<6) handleClick(e);
   pointerDownPos=null;
 }
