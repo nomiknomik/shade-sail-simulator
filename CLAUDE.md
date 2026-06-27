@@ -2,7 +2,7 @@
 
 ## Project Overview
 A browser-based 3D shade sail simulator for planning sail installations and shadow analysis.
-**Current version:** v4.9  
+**Current version:** v5.0  
 **Tech stack:** Single `index.html` – Three.js 0.160 + SunCalc 1.9 via CDN, no build tools.
 
 ## Repository

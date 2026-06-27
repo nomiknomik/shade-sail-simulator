@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.9 · DE/EN/RU · Ideale Segel-Position · Pfosten-Optimierung</div>
+      <div class="ver">Version 5.0 · DE/EN/RU · Ideale Segel-Position (Netto-KPI, kollisionsfrei) · Pfosten-Optimierung</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -350,7 +350,9 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Körpergröße',
     'btn-optimize-sails': '🎯 Ideale Segel-Position berechnen',
-    'hint-optimize-sails': 'Ermittelt die optimale Position und Ausrichtung der aktiven Segel für maximale Beschattung (10–18 Uhr). Pfosten werden anschließend an den Segelecken positioniert (Höhe 3,0 m, anpassbar). Segel können sich einen Pfosten teilen.',
+    'hint-optimize-sails': 'Ermittelt Position, Ausrichtung und Pfostenhöhen der aktiven Segel für maximale Netto-Beschattung der Auswertungsfläche (10–18 Uhr; Wand- und Pergolaschatten werden abgezogen). Pfosten bleiben im Garten mit Abstand zur Wand – kein Durchspießen. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
+    'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
+    'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -462,7 +464,9 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Height',
     'btn-optimize-sails': '🎯 Calculate ideal sail position',
-    'hint-optimize-sails': 'Finds the optimal position and orientation of the active sails for maximum shade coverage (10–18h). Posts are placed at sail corners (height 3.0 m, adjustable). Sails may share a post.',
+    'hint-optimize-sails': 'Finds position, orientation and post heights of the active sails for maximum net shading of the evaluation area (10–18h; wall and pergola shadows are subtracted). Posts stay inside the garden, clear of the walls – no clipping. The result is only applied if it improves on the current layout.',
+    'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
+    'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -574,7 +578,9 @@ const TRANSLATIONS = {
     'person-label': 'Человек',
     'lbl-person-h': 'Рост',
     'btn-optimize-sails': '🎯 Вычислить идеальное положение парусов',
-    'hint-optimize-sails': 'Находит оптимальное положение и ориентацию активных парусов для максимальной тени (10–18ч). Столбы размещаются в углах парусов (высота 3,0 м, регулируется). Паруса могут иметь общий столб.',
+    'hint-optimize-sails': 'Находит положение, ориентацию и высоту столбов активных парусов для максимального чистого затенения области анализа (10–18ч; тени стен и перголы вычитаются). Столбы остаются в саду на расстоянии от стен – без пересечения. Результат применяется только если он лучше текущего.',
+    'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
+    'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
   }
 };
 
@@ -1177,88 +1183,133 @@ function optimizeSailPositions(){
   const btn=document.getElementById('btnOptimizeSails');
   if(btn){ btn.disabled=true; btn.textContent='⏳ …'; }
   setTimeout(()=>{
-    _runSailOptimizer();
-    if(btn){ btn.disabled=false; applyTranslations(); }
+    const resultMsg=_runSailOptimizer();
+    if(btn){ btn.disabled=false; }
+    applyTranslations();
+    if(resultMsg){ const st=document.getElementById('saveState'); if(st) st.textContent=resultMsg; }
   },16);
 }
 function _runSailOptimizer(){
   const {w,d}=S.garden; const hw=w/2,hd=d/2;
   const Rw=evalRectWorld(); const useRect=!!(Rw&&S.evalRect.on);
-  /* Sonnenrichtungen vorberechnen (grob, Schrittweite 30 min) */
+  const B=refWorld();
+  const activeSails=S.sails.map((s,i)=>({si:i,s})).filter(({s})=>s.on);
+  if(!activeSails.length) return;
+
+  /* ---- Regressions-Schutz: aktuellen Zustand + echte KPI als Baseline sichern ---- */
+  const kpiNow=()=>{ const r=computeDayShade(); return useRect? r.total_rect_m2h : r.total_m2h; };
+  const beforeSnap={ points:JSON.parse(JSON.stringify(S.points)),
+    sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) };
+  const beforeKPI=kpiNow();
+
+  /* ---- Sonnenrichtungen (grob, 30 min) ---- */
   const sunDirs=[];
   for(let m=600;m<=1080;m+=30){ const {dir,alt}=sunDirAtMin(m);
     if(alt>0&&dir.y>0.02) sunDirs.push({dir,wgt:(m===600||m===1080)?0.5:1}); }
   if(!sunDirs.length) return;
-  /* Bewertungsraster */
-  const NX=15,NY=15; const cellA=(w/NX)*(d/NY);
+
+  /* ---- KPI-konsistente statische Schatten je Zeitschritt: Wand + Pergola ---- */
+  const blockersPerStep=sunDirs.map(({dir})=>{ const b=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) b.push(pg); return b; });
+
+  /* ---- Bewertungszellen (innerhalb Auswertungsrechteck, sonst ganzer Garten) ---- */
+  const NX=18,NY=18; const cellA=(w/NX)*(d/NY);
   const cells=[];
   for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
     for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
       const inRect=useRect?(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1):true;
       if(inRect) cells.push({x:cx,z:cz}); } }
-  /* Fallback: gesamter Garten, wenn Bewertungsrechteck leer */
   if(!cells.length){ for(let ix=0;ix<NX;ix++) for(let iy=0;iy<NY;iy++)
     cells.push({x:-hw+(ix+0.5)*(w/NX),z:-hd+(iy+0.5)*(d/NY)}); }
-  const H_CTR=3.0; /* Mittelhöhe – Nordecke wird angehoben (mehr Schatten bei ~48°N) */
-  const tiltArr=[0,0.4,0.8]; /* Neigung: Höhendelta Nordecke vs. Süddecke (0=flach) */
-  /* Bodenschatten mit Nord-Süd-Neigung: math. Nachweis: Schattenbreite +2·tiltH·cot(Sonnenwinkel) */
+
+  /* ---- Geometrie ---- */
+  const CLEAR=0.15;            /* Mindestabstand Segelecke ↔ Wand → kein Durchspießen */
+  const H_CTR=3.0;
+  const tiltArr=[0,0.4,0.8];   /* Höhendelta Nord- vs. Südecke (0 = flach) */
+
+  /* Ecken einer Platzierung in Weltkoordinaten (nur XZ-Fußabdruck) */
+  function cornersOf(s,cx,cz,rotDeg){ const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    return sailLocalCorners(s).map(v=>({wx:cx+v.x*ca-v.z*sa, wz:cz+v.x*sa+v.z*ca})); }
+  /* Harte Bedingung: ALLE Ecken müssen im Garten minus Abstand liegen.
+     Da der Garten konvex ist, liegt damit der gesamte Segel-Fußabdruck innerhalb → keine Wand-Kollision. */
+  function fits(corners){ return corners.every(c=> c.wx>=-hw+CLEAR && c.wx<=hw-CLEAR && c.wz>=-hd+CLEAR && c.wz<=hd-CLEAR); }
+
+  /* Bodenschatten mit Nord-Süd-Neigung */
   function groundPolyWithTilt(s,cx,cz,rotDeg,tiltH,dir){
     const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
     const lc=sailLocalCorners(s);
     const worldZs=lc.map(v=>cz+v.x*sa+v.z*ca);
     const minZ=Math.min(...worldZs),maxZ=Math.max(...worldZs);
-    const extZ=Math.max(0.01,(maxZ-minZ)/2);
-    const centerZ=(minZ+maxZ)/2;
-    return lc.map((v,i)=>{
-      const wx=cx+v.x*ca-v.z*sa,wz=worldZs[i];
-      /* Z negativ = Süden → Nordecke (wz>centerZ) bekommt +tiltH, Süddecke −tiltH */
+    const extZ=Math.max(0.01,(maxZ-minZ)/2); const centerZ=(minZ+maxZ)/2;
+    return lc.map((v,i)=>{ const wx=cx+v.x*ca-v.z*sa, wz=worldZs[i];
       const h=Math.max(1.5,Math.min(3.9,H_CTR+(wz-centerZ)/extZ*tiltH));
       return projToGround(new THREE.Vector3(wx,h,wz),dir); }); }
-  /* Score: summierte, über alle Zeitschritte gewichtete Bodenschattenfläche */
-  function scoreSailAt(s,cx,cz,rotDeg,tiltH,excludePolys){
+
+  /* Score = NETTO-Schatten wie die echte KPI: Zelle zählt nur, wenn im Segelschatten
+     UND nicht bereits durch Wand/Pergola (blockersPerStep) oder ein vorheriges Segel (prev) beschattet. */
+  function scoreSailAt(s,cx,cz,rotDeg,tiltH,prev){
     let sc=0;
     for(let ti=0;ti<sunDirs.length;ti++){
       const {dir,wgt}=sunDirs[ti];
       const poly=groundPolyWithTilt(s,cx,cz,rotDeg,tiltH,dir);
+      const blk=blockersPerStep[ti]; const pv=prev?prev[ti]:null;
       for(const c of cells){
         if(!pointInPoly(c,poly)) continue;
-        if(excludePolys&&excludePolys[ti]&&pointInPoly(c,excludePolys[ti])) continue;
+        let bad=false;
+        for(const bp of blk){ if(pointInPoly(c,bp)){ bad=true; break; } }
+        if(bad) continue;
+        if(pv){ for(const pp of pv){ if(pointInPoly(c,pp)){ bad=true; break; } } if(bad) continue; }
         sc+=cellA*wgt; } }
     return sc; }
-  const activeSails=S.sails.map((s,i)=>({si:i,s})).filter(({s})=>s.on);
-  if(!activeSails.length) return;
-  /* Raster-Parameter */
-  const margin=0.5;
-  const xSt=Math.max(0.45,w/18),zSt=Math.max(0.45,d/18);
+
+  /* ---- Grobes Suchraster (nur Platzierungen, die vollständig in den Garten passen) ---- */
+  const xSt=Math.max(0.4,w/16),zSt=Math.max(0.4,d/16);
   const cxArr=[],czArr=[],rotArr=[];
-  for(let x=-hw+margin;x<=hw-margin+0.01;x+=xSt) cxArr.push(x);
-  for(let z=-hd+margin;z<=hd-margin+0.01;z+=zSt) czArr.push(z);
+  for(let x=-hw+CLEAR;x<=hw-CLEAR+1e-3;x+=xSt) cxArr.push(x);
+  for(let z=-hd+CLEAR;z<=hd-CLEAR+1e-3;z+=zSt) czArr.push(z);
   for(let r=0;r<180;r+=15) rotArr.push(r);
-  /* Greedy-Optimierung: Segel nacheinander, jedes nächste Segel maximiert Zusatz-Fläche */
-  const results=[]; let prevPolysPerStep=null;
+
+  /* ---- Greedy je Segel mit korrektem Netto-Score + lokaler Verfeinerung ---- */
+  const results=[]; let prevSailPolys=null; let infeasible=false;
   for(const {si,s} of activeSails){
-    let best=-1,bx=0,bz=0,br=0,bt=0;
-    for(const cx of cxArr) for(const cz of czArr) for(const rot of rotArr) for(const tilt of tiltArr){
-      const sc=scoreSailAt(s,cx,cz,rot,tilt,prevPolysPerStep);
-      if(sc>best){ best=sc;bx=cx;bz=cz;br=rot;bt=tilt; } }
+    let best=-1,bx=0,bz=0,br=0,bt=0,found=false;
+    for(const cx of cxArr) for(const cz of czArr){
+      for(const rot of rotArr){
+        if(!fits(cornersOf(s,cx,cz,rot))) continue;
+        for(const tilt of tiltArr){
+          const sc=scoreSailAt(s,cx,cz,rot,tilt,prevSailPolys);
+          if(sc>best){ best=sc;bx=cx;bz=cz;br=rot;bt=tilt;found=true; } } } }
+    /* Falls kein gültiger Rasterpunkt: Segelmitte (Constraint kann durch große Segel verletzt sein) */
+    if(!found){ bx=0;bz=0;br=0;bt=0; }
+    /* Lokale Verfeinerung (Hill-Climb auf Position + Rotation) */
+    let step=Math.max(xSt,zSt)/2;
+    for(let iter=0;iter<5;iter++){
+      let improved=false;
+      const cand=[[bx+step,bz,br],[bx-step,bz,br],[bx,bz+step,br],[bx,bz-step,br],[bx,bz,br+7],[bx,bz,br-7]];
+      for(const [cx,cz,rr0] of cand){ const rr=((rr0%180)+180)%180;
+        if(!fits(cornersOf(s,cx,cz,rr))) continue;
+        for(const tilt of tiltArr){ const sc=scoreSailAt(s,cx,cz,rr,tilt,prevSailPolys);
+          if(sc>best){ best=sc;bx=cx;bz=cz;br=rr;bt=tilt;improved=true; } } }
+      if(!improved) step/=2;
+    }
+    /* Segel passt nicht in den Garten (zu groß) → nicht platzieren, später sauber zurücksetzen */
+    if(!fits(cornersOf(s,bx,bz,br))){ infeasible=true; break; }
     results.push({si,s,cx:bx,cz:bz,rot:br,tiltH:bt});
-    prevPolysPerStep=sunDirs.map(({dir})=>groundPolyWithTilt(s,bx,bz,br,bt,dir)); }
-  /* Ecken-Positionen in Weltkoordinaten berechnen */
-  const B=refWorld();
-  for(const res of results){
-    const {s,cx,cz,rot}=res; const ang=rot*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    const polys=sunDirs.map(({dir})=>groundPolyWithTilt(s,bx,bz,br,bt,dir));
+    if(!prevSailPolys) prevSailPolys=sunDirs.map(()=>[]);
+    prevSailPolys=prevSailPolys.map((arr,ti)=>arr.concat([polys[ti]]));
+  }
+
+  /* ---- Ecken → Pfosten-Cluster (gemeinsame Pfosten bei < 0,4 m Abstand) ---- */
+  for(const res of results){ const {s,cx,cz,rot}=res; const ang=rot*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
     res.corners=sailLocalCorners(s).map(v=>({wx:cx+v.x*ca-v.z*sa,wz:cz+v.x*sa+v.z*ca})); }
-  /* Cluster: Ecken < 0,4 m voneinander → gemeinsamer Pfosten */
   const clusters=[];
   for(const res of results){ res.postIndices=[];
-    for(const c of res.corners){
-      let found=-1;
-      for(let ci=0;ci<clusters.length;ci++){
-        const dx=clusters[ci].wx-c.wx,dz=clusters[ci].wz-c.wz;
+    for(const c of res.corners){ let found=-1;
+      for(let ci=0;ci<clusters.length;ci++){ const dx=clusters[ci].wx-c.wx,dz=clusters[ci].wz-c.wz;
         if(Math.sqrt(dx*dx+dz*dz)<0.4){ found=ci; break; } }
       if(found>=0){ res.postIndices.push(found); }
-      else{ clusters.push({wx:c.wx,wz:c.wz,postIdx:clusters.length}); res.postIndices.push(clusters.length-1); } } }
-  /* Falls mehr Cluster als Pfosten: nächste Paare zusammenführen */
+      else{ clusters.push({wx:c.wx,wz:c.wz}); res.postIndices.push(clusters.length-1); } } }
+  /* Mehr Cluster als Pfosten → nächste Paare mitteln (bleibt durch Konvexität wandfern) */
   while(clusters.length>S.points.length){
     let minD=Infinity,mi=0,mj=1;
     for(let i=0;i<clusters.length;i++) for(let j=i+1;j<clusters.length;j++){
@@ -1266,43 +1317,43 @@ function _runSailOptimizer(){
       if(dd<minD){ minD=dd;mi=i;mj=j; } }
     clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
     for(const res of results) res.postIndices=res.postIndices.map(pi=>pi===mj?mi:(pi>mj?pi-1:pi));
-    clusters.splice(mj,1); clusters.forEach((c,ci)=>c.postIdx=ci); }
-  /* Task 1: Pfosten auf Gartenwände snappen (nach Optimierung) */
-  function snapToWall(wx,wz){
-    const dW=Math.abs(wx+hw),dE=Math.abs(wx-hw),dS=Math.abs(wz+hd),dN=Math.abs(wz-hd);
-    const minD=Math.min(dW,dE,dS,dN);
-    if(minD===dW) return {wx:-hw,wz:Math.max(-hd,Math.min(hd,wz))};
-    if(minD===dE) return {wx:hw, wz:Math.max(-hd,Math.min(hd,wz))};
-    if(minD===dS) return {wx:Math.max(-hw,Math.min(hw,wx)),wz:-hd};
-    return {wx:Math.max(-hw,Math.min(hw,wx)),wz:hd};
-  }
-  for(const c of clusters){ const sn=snapToWall(c.wx,c.wz); c.wx=sn.wx; c.wz=sn.wz; }
-  /* Task 2: Pfostenhöhen aus Nord-Süd-Neigung berechnen */
-  const postHSum=new Array(clusters.length).fill(0);
-  const postHCnt=new Array(clusters.length).fill(0);
-  for(const res of results){
-    const {s,cx,cz,rot,tiltH}=res;
+    clusters.splice(mj,1); }
+
+  /* ---- Pfostenhöhen aus Nord-Süd-Neigung (KEIN Wand-Snap mehr → kein Durchspießen) ---- */
+  const postHSum=new Array(clusters.length).fill(0), postHCnt=new Array(clusters.length).fill(0);
+  for(const res of results){ const {s,cx,cz,rot,tiltH}=res;
     const ang=rot*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
-    const lc=sailLocalCorners(s);
-    const worldZs=lc.map(v=>cz+v.x*sa+v.z*ca);
-    const minZ=Math.min(...worldZs),maxZ=Math.max(...worldZs);
-    const extZ=Math.max(0.01,(maxZ-minZ)/2);
-    const centerZ=(minZ+maxZ)/2;
-    for(let k=0;k<res.postIndices.length;k++){
-      const ci=res.postIndices[k];
-      const wz=clusters[ci].wz; /* Welt-Z nach Wall-Snap */
+    const lc=sailLocalCorners(s); const worldZs=lc.map(v=>cz+v.x*sa+v.z*ca);
+    const minZ=Math.min(...worldZs),maxZ=Math.max(...worldZs); const extZ=Math.max(0.01,(maxZ-minZ)/2); const centerZ=(minZ+maxZ)/2;
+    for(let k=0;k<res.postIndices.length;k++){ const ci=res.postIndices[k]; const wz=clusters[ci].wz;
       const h=Math.max(2.0,Math.min(3.9,H_CTR+(wz-centerZ)/extZ*tiltH));
       postHSum[ci]+=h; postHCnt[ci]++; } }
-  /* Pfosten an Wänden setzen (2,0–3,9 m Höhe, 1 Nachkommastelle) */
-  for(let ci=0;ci<clusters.length;ci++){
-    const {wx,wz}=clusters[ci];
-    const h=postHCnt[ci]>0 ? postHSum[ci]/postHCnt[ci] : H_CTR;
+
+  /* ---- Unlösbar (Segel zu groß): Originalzustand beibehalten ---- */
+  if(infeasible){
+    S.points=beforeSnap.points;
+    beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
+    buildPointEditors(); buildSailEditors(); updateAll(); touch();
+    return t('opt-reverted').replace('{a}',fmt(beforeKPI)).replace('{b}',fmt(beforeKPI));
+  }
+
+  /* ---- In State schreiben ---- */
+  for(let ci=0;ci<clusters.length;ci++){ const {wx,wz}=clusters[ci];
+    const h=postHCnt[ci]>0?postHSum[ci]/postHCnt[ci]:H_CTR;
     S.points[ci]={ x:wx-B.x, y:wz-B.z, h:Math.round(Math.max(2.0,Math.min(3.9,h))*10)/10 }; }
-  /* Segel-Zuweisung und Offset zurücksetzen */
-  for(const res of results){
-    S.sails[res.si].posts=res.postIndices;
-    S.sails[res.si].dx=0; S.sails[res.si].dz=0; S.sails[res.si].rot=0; }
+  for(const res of results){ S.sails[res.si].posts=res.postIndices; S.sails[res.si].dx=0; S.sails[res.si].dz=0; S.sails[res.si].rot=0; }
+
+  /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung übernehmen ---- */
+  const afterKPI=kpiNow();
+  let key='opt-improved';
+  if(afterKPI<=beforeKPI){
+    S.points=beforeSnap.points;
+    beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
+    key='opt-reverted';
+  }
   buildPointEditors(); buildSailEditors(); updateAll(); touch();
+  /* Meldung wird vom Aufrufer NACH applyTranslations() gesetzt */
+  return t(key).replace('{a}',fmt(afterKPI)).replace('{b}',fmt(beforeKPI));
 }
 
 function renderDayShade(){
