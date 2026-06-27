@@ -1,6 +1,6 @@
 # Lizenz / License
 
-**Copyright © 2026 Alexander Zabelyshenskiy. Alle Rechte vorbehalten. / All rights reserved.**
+**Copyright © 2026 Alexander Zabelyshenskiy.**
 
 Originalquelle / Original source: <https://github.com/nomiknomik/shade-sail-simulator>
 
@@ -8,24 +8,30 @@ Originalquelle / Original source: <https://github.com/nomiknomik/shade-sail-simu
 
 ## Deutsch
 
-Die private und kommerzielle Nutzung, Vervielfältigung, Bearbeitung und Weiterverbreitung
-dieser Software („Shade Sail Simulator") sowie davon abgeleiteter Werke ist unentgeltlich
-gestattet, sofern **alle** der nachfolgenden Bedingungen **kumulativ** erfüllt sind:
+### Private Nutzung – frei
 
-1. **Vorherige Benachrichtigung.** Der Urheber, Alexander Zabelyshenskiy, wird vor der
-   Nutzung über die beabsichtigte Verwendung in Kenntnis gesetzt.
+Die **private, nicht-kommerzielle Nutzung** dieser Software („Shade Sail Simulator")
+ist **uneingeschränkt und ohne vorherige Genehmigung oder Benachrichtigung** des Urhebers
+gestattet. Du darfst die Software privat verwenden, ausprobieren und für deine eigenen
+Garten- bzw. Sonnensegel-Planungen einsetzen, ohne mich vorab zu informieren.
 
-2. **Öffentlicher Fork auf GitHub.** Die Nutzung erfolgt auf Grundlage eines öffentlich
-   nachvollziehbaren Forks bzw. Clones des Original-Repositorys auf GitHub, sodass der
-   Ursprung der Software jederzeit überprüfbar bleibt.
+### Klonierung & kommerzielle Nutzung – mit Information
 
-3. **Quellenangabe.** In allen abgeleiteten Werken, Veröffentlichungen und Produkten – ob
-   privat oder kommerziell – werden der Urheber (Alexander Zabelyshenskiy) sowie die
-   Originalquelle (<https://github.com/nomiknomik/shade-sail-simulator>) deutlich und gut
-   sichtbar genannt.
+In folgenden Fällen ist der Urheber, Alexander Zabelyshenskiy, **vorab zu informieren**:
 
-Werden eine oder mehrere dieser Bedingungen nicht erfüllt, wird **keine Nutzungslizenz**
-erteilt; jede Nutzung ist in diesem Fall untersagt.
+1. **Klonierung / Fork / Weiterverbreitung.** Wenn du die Software (oder davon abgeleitete
+   Werke) klonst, forkst, veröffentlichst oder an Dritte weitergibst.
+
+2. **Kommerzielle Nutzung.** Wenn du die Software oder abgeleitete Werke in einem
+   kommerziellen Kontext einsetzt.
+
+Eine einfache Mitteilung genügt; eine gesonderte Genehmigung ist nicht erforderlich.
+
+### Quellenangabe
+
+Bei Klonierung, Weiterverbreitung oder kommerzieller Nutzung werden der Urheber
+(Alexander Zabelyshenskiy) sowie die Originalquelle
+(<https://github.com/nomiknomik/shade-sail-simulator>) gut sichtbar genannt.
 
 **Gewährleistungsausschluss.** Die Software wird „wie besehen" („as is") ohne jegliche
 ausdrückliche oder stillschweigende Gewährleistung bereitgestellt. Der Urheber haftet nicht
@@ -35,23 +41,29 @@ für Schäden, die aus der Nutzung der Software entstehen.
 
 ## English
 
-The private and commercial use, reproduction, modification, and redistribution of this
-software ("Shade Sail Simulator") and of derivative works thereof is permitted free of
-charge, provided that **all** of the following conditions are met **cumulatively**:
+### Private use – free
 
-1. **Prior notification.** The author, Alexander Zabelyshenskiy, is notified of the intended
-   use before such use.
+The **private, non-commercial use** of this software ("Shade Sail Simulator") is permitted
+**without any restriction and without prior permission or notification** of the author.
+You may use, try out, and apply the software privately for your own garden / shade-sail
+planning without informing me in advance.
 
-2. **Public fork on GitHub.** The use is based on a publicly traceable fork or clone of the
-   original repository on GitHub, so that the origin of the software remains verifiable at
-   all times.
+### Cloning & commercial use – with notification
 
-3. **Attribution.** All derivative works, publications, and products — whether private or
-   commercial — clearly and visibly credit the author (Alexander Zabelyshenskiy) and the
-   original source (<https://github.com/nomiknomik/shade-sail-simulator>).
+In the following cases the author, Alexander Zabelyshenskiy, must be **notified in advance**:
 
-If one or more of these conditions are not met, **no license is granted**, and any use is
-prohibited in that case.
+1. **Cloning / fork / redistribution.** If you clone, fork, publish, or pass on the software
+   (or derivative works thereof) to third parties.
+
+2. **Commercial use.** If you use the software or derivative works in a commercial context.
+
+A simple notice is sufficient; separate approval is not required.
+
+### Attribution
+
+In case of cloning, redistribution, or commercial use, the author
+(Alexander Zabelyshenskiy) and the original source
+(<https://github.com/nomiknomik/shade-sail-simulator>) are clearly and visibly credited.
 
 **Disclaimer of warranty.** The software is provided "as is", without warranty of any kind,
 express or implied. The author shall not be liable for any damages arising from the use of

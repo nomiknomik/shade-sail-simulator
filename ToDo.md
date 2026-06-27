@@ -6,8 +6,3 @@
 > **wieder geleert** (nur diese Überschrift + Workflow-Hinweis bleiben stehen).
 
 ## Offene Wünsche
-
-<!-- Neue Wünsche hier als Stichpunkte eintragen, z. B.:
-- Pfosten per Maus verschiebbar machen
-- Warnung bei zu großem Restseil
--->

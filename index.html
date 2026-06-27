@@ -69,9 +69,17 @@
   #stage canvas{display:block}
   #hud{position:absolute;left:14px;bottom:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;backdrop-filter:blur(4px)}
   #hud .night{color:var(--sun)}
-  #dayHud{position:absolute;left:14px;top:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px);pointer-events:none;max-width:280px;line-height:1.6}
+  #topleft{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:8px;max-width:280px;pointer-events:none}
+  #dayHud{background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px);line-height:1.6}
+  #dayHud:empty{display:none}
   #dayHud b{color:var(--text);font-variant-numeric:tabular-nums}
   #dayHud .dh-label{color:var(--sun);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  #dayHud .dh-rect{color:#f1c40f}
+  #histHud{display:flex;gap:6px;pointer-events:auto}
+  #histHud button{background:rgba(17,22,28,.8);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 13px;font-size:15px;line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
+  #histHud button:hover:not(:disabled){border-color:var(--sun);color:var(--sun)}
+  #histHud button:disabled{opacity:.35;cursor:default}
+  #btnDrawRect.active{background:#f1c40f;color:#1a1206;border-color:#f1c40f}
   @keyframes card-flash{ 0%{box-shadow:0 0 0 2px var(--sun)} 100%{box-shadow:none} }
   .card.highlight{ animation:card-flash .9s ease-out forwards }
   .group.highlight{ animation:card-flash .9s ease-out forwards }
@@ -84,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.1 · DE/EN/RU · blauer Nordpfeil · Wand-Klick · Lizenz</div>
+      <div class="ver">Version 4.5 · DE/EN/RU · Auswertungs-Rechteck · Undo/Redo · Schatten-Logik</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -111,6 +119,7 @@
       <div class="row" id="row-wall-xb"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="7" step="0.1"><input id="wxbn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
       <div class="row" id="row-wall-y0"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="7" step="0.1"><input id="wy0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
       <div class="row" id="row-wall-yt"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="7" step="0.1"><input id="wytn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-opacity"></label><input id="wallop" type="range" min="0.1" max="1" step="0.05"><input id="wallopn" class="num" type="text" inputmode="decimal"></div>
       <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="text" inputmode="decimal"><span class="unit">°</span></div>
       <p class="hint" data-i18n="hint-walls"></p>
     </div>
@@ -140,7 +149,8 @@
     <div class="group">
       <h2 data-i18n="sec-posts"></h2>
       <p class="hint" data-i18n="hint-posts"></p>
-      <div class="row"><label data-i18n="lbl-labels"></label><input id="showLabels" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-labels-3d"></span></div>
+      <div class="row"><label data-i18n="lbl-postlabels"></label><input id="showPostLabels" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-postlabels-3d"></span></div>
+      <div class="row"><label data-i18n="lbl-dims"></label><input id="showDims" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-dims-3d"></span></div>
       <div id="points"></div>
     </div>
 
@@ -171,6 +181,11 @@
       <h2 data-i18n="sec-dayshade"></h2>
       <p class="hint" data-i18n="hint-dayshade"></p>
       <div class="readout" id="dayShade"></div>
+      <div class="row" style="gap:8px;margin-top:8px">
+        <button class="btn secondary" id="btnDrawRect" style="flex:1" data-i18n="btn-drawrect"></button>
+        <button class="btn secondary" id="btnClearRect" style="flex:0 0 92px" data-i18n="btn-clearrect"></button>
+      </div>
+      <p class="hint" data-i18n="rect-hint"></p>
     </div>
     <div class="group"><h2 data-i18n="sec-sun"></h2><div class="readout" id="sunReadout"></div></div>
     <div class="group"><h2 data-i18n="sec-legend"></h2>
@@ -182,7 +197,15 @@
       <a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">GitHub Repository</a>
     </footer>
   </aside>
-  <main id="stage"><div id="hud"></div><div id="dayHud"></div></main>
+  <main id="stage"><div id="hud"></div>
+    <div id="topleft">
+      <div id="dayHud"></div>
+      <div id="histHud">
+        <button id="undoBtn" data-i18n-title="btn-undo">↩</button>
+        <button id="redoBtn" data-i18n-title="btn-redo">↪</button>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
@@ -194,6 +217,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const DEG=Math.PI/180;
+/* Reiner Anzeige-Offset für den blauen Nordpfeil (beeinflusst NICHT die Sonnen-/Schattenberechnung).
+   +90° (Math.PI/2) dreht den Pfeil im Uhrzeigersinn betrachtet so, dass er zur rechten Wand zeigt;
+   Vorzeichen umkehren, falls der Pfeil in die falsche Richtung zeigt. */
+const NORTH_VIS_OFFSET=Math.PI/2;
 const STORE_KEY='sonnensegel-v7';
 const POST_HEX=['#e74c3c','#f39c12','#f1c40f','#2ecc71','#3498db','#9b59b6'];
 const num=(v,def)=>{ v=+v; return isNaN(v)?def:v; };
@@ -220,10 +247,20 @@ const TRANSLATIONS = {
     'btn-play': '▶ Tag abspielen',
     'btn-pause': '⏸ Pause',
     'btn-now': 'Jetzt',
+    'btn-undo': 'Rückgängig (Strg+Z)',
+    'btn-redo': 'Wiederholen (Strg+Y)',
+    'btn-drawrect': '▣ Bereich aufziehen',
+    'btn-clearrect': 'Bereich löschen',
+    'rect-hint': 'Klick „Bereich aufziehen", dann auf dem Boden ein Rechteck aufziehen. Es begrenzt die Auswertung zusätzlich.',
+    'dayshade-rect': 'Im Rechteck',
     'hint-save': 'Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Segel & Möbel lassen sich im 3D mit der Maus verschieben.',
     'hint-walls': 'Vier Wände einzeln einstellbar (0 m = keine Wand). Bezugspunkt fest auf Ecke 3 (+X/+Y).',
     'hint-posts': '6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut ab Boden.',
     'hint-labels-3d': 'Labels & Maße im 3D anzeigen',
+    'lbl-postlabels': 'Pfosten-Labels',
+    'hint-postlabels-3d': 'Pfosten & Möbel beschriften',
+    'lbl-dims': 'Maße',
+    'hint-dims-3d': 'Maßketten anzeigen',
     'hint-sails': 'Feste Maße je Segel (als Zahl eingeben). Im 3D mit der Maus ziehen. ⟲/⟳ dreht die Aufhängung.',
     'hint-furniture': 'Im 3D mit der Maus in der Ebene verschiebbar.',
     'hint-dayshade': 'Über den Tag (10–18 Uhr) integrierte Bodenschattenfläche je aktivem Segel – in m²·h. Steckt auch im JSON-Export.',
@@ -234,6 +271,7 @@ const TRANSLATIONS = {
     'lbl-wall-xb': 'Links (X=−B)',
     'lbl-wall-y0': 'Hinten (Y=0)',
     'lbl-wall-yt': 'Vorne (Y=−D)',
+    'lbl-wall-opacity': 'Wand-Deckkraft',
     'lbl-north': 'Norden °',
     'lbl-city': 'Ort',
     'city-manual': '— eigene Koordinaten —',
@@ -257,6 +295,7 @@ const TRANSLATIONS = {
     'lbl-4corners': '4 Ecken',
     'lbl-corner-n': 'Ecke',
     'lbl-rotate': 'Drehen',
+    'lbl-sail-rot': 'Drehwinkel',
     'lbl-color': 'Farbe',
     'lbl-opacity': 'Deckkraft',
     'lbl-active': 'aktiv',
@@ -312,10 +351,20 @@ const TRANSLATIONS = {
     'btn-play': '▶ Play Day',
     'btn-pause': '⏸ Pause',
     'btn-now': 'Now',
+    'btn-undo': 'Undo (Ctrl+Z)',
+    'btn-redo': 'Redo (Ctrl+Y)',
+    'btn-drawrect': '▣ Draw area',
+    'btn-clearrect': 'Clear area',
+    'rect-hint': 'Click "Draw area", then drag a rectangle on the ground. It additionally limits the analysis.',
+    'dayshade-rect': 'In rectangle',
     'hint-save': 'Auto-saved in browser. Double-click a slider to reset to default. Sails & furniture can be dragged in 3D.',
     'hint-walls': 'Four walls individually adjustable (0 m = no wall). Reference point fixed at Corner 3 (+X/+Y).',
     'hint-posts': '6 posts in fixed colors. X/Y relative to reference point, height absolute from ground.',
     'hint-labels-3d': 'Show labels & dimensions in 3D',
+    'lbl-postlabels': 'Post labels',
+    'hint-postlabels-3d': 'Label posts & furniture',
+    'lbl-dims': 'Dimensions',
+    'hint-dims-3d': 'Show dimension lines',
     'hint-sails': 'Fixed dimensions per sail (enter as number). Drag in 3D. ⟲/⟳ rotates the suspension.',
     'hint-furniture': 'Can be dragged horizontally in the 3D view.',
     'hint-dayshade': 'Ground shadow area integrated over the day (10–18h) per active sail – in m²·h. Also included in JSON export.',
@@ -326,6 +375,7 @@ const TRANSLATIONS = {
     'lbl-wall-xb': 'Left (X=−W)',
     'lbl-wall-y0': 'Back (Y=0)',
     'lbl-wall-yt': 'Front (Y=−D)',
+    'lbl-wall-opacity': 'Wall opacity',
     'lbl-north': 'North °',
     'lbl-city': 'Location',
     'city-manual': '— custom coordinates —',
@@ -349,6 +399,7 @@ const TRANSLATIONS = {
     'lbl-4corners': '4 Corners',
     'lbl-corner-n': 'Corner',
     'lbl-rotate': 'Rotate',
+    'lbl-sail-rot': 'Rotation angle',
     'lbl-color': 'Color',
     'lbl-opacity': 'Opacity',
     'lbl-active': 'active',
@@ -404,10 +455,20 @@ const TRANSLATIONS = {
     'btn-play': '▶ Воспр. день',
     'btn-pause': '⏸ Пауза',
     'btn-now': 'Сейчас',
+    'btn-undo': 'Отменить (Ctrl+Z)',
+    'btn-redo': 'Повторить (Ctrl+Y)',
+    'btn-drawrect': '▣ Задать область',
+    'btn-clearrect': 'Удалить область',
+    'rect-hint': 'Нажмите «Задать область», затем растяните прямоугольник по полу. Он дополнительно ограничивает анализ.',
+    'dayshade-rect': 'В прямоугольнике',
     'hint-save': 'Автосохранение в браузере. Двойной клик по ползунку = сброс. Паруса и мебель можно перетаскивать в 3D.',
     'hint-walls': 'Четыре стены регулируются отдельно (0 м = нет стены). Базовая точка зафиксирована на Угол 3 (+X/+Y).',
     'hint-posts': '6 столбов в фиксированных цветах. X/Y относительно базовой точки, высота — от пола.',
     'hint-labels-3d': 'Показать метки и размеры в 3D',
+    'lbl-postlabels': 'Метки столбов',
+    'hint-postlabels-3d': 'Метки столбов и мебели',
+    'lbl-dims': 'Размеры',
+    'hint-dims-3d': 'Показать размерные линии',
     'hint-sails': 'Фиксированные размеры паруса (введите числом). Перетащить в 3D. ⟲/⟳ вращает подвес.',
     'hint-furniture': 'Можно перетаскивать в 3D по горизонтали.',
     'hint-dayshade': 'Интегрированная площадь тени (10–18ч) по каждому активному парусу – в м²·ч. Также включена в JSON-экспорт.',
@@ -418,6 +479,7 @@ const TRANSLATIONS = {
     'lbl-wall-xb': 'Слева (X=−Ш)',
     'lbl-wall-y0': 'Сзади (Y=0)',
     'lbl-wall-yt': 'Спереди (Y=−Г)',
+    'lbl-wall-opacity': 'Прозрачность стен',
     'lbl-north': 'Север °',
     'lbl-city': 'Место',
     'city-manual': '— свои координаты —',
@@ -441,6 +503,7 @@ const TRANSLATIONS = {
     'lbl-4corners': '4 угла',
     'lbl-corner-n': 'Угол',
     'lbl-rotate': 'Вращение',
+    'lbl-sail-rot': 'Угол поворота',
     'lbl-color': 'Цвет',
     'lbl-opacity': 'Прозрачность',
     'lbl-active': 'активен',
@@ -489,6 +552,7 @@ function applyTranslations(){
     if(key==='legend-text') el.innerHTML=t(key);
     else el.textContent=t(key);
   });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title=t(el.dataset.i18nTitle); });
   document.getElementById('legendText').innerHTML=t('legend-text');
   ['de','en','ru'].forEach(l=>{
     const b=document.getElementById('lang-'+l);
@@ -517,31 +581,33 @@ window.setLang=function(lang){
 function defaultState(){
   return {
     _pivotCorner:true,
-    garden:{ w:9.5, d:9.5, walls:{ x0:3, xb:3, y0:3, yt:3 }, north:229 },
+    garden:{ w:9.5, d:9.5, walls:{ x0:6.3, xb:2.4, y0:6.3, yt:2.4 }, wallOpacity:1, north:178 },
     loc:{ lat:48.4636, lon:8.4111 },
     dateStr:new Date().toISOString().slice(0,10),
-    timeMin:1092,
-    showLabels:false,
+    timeMin:674,
+    showPostLabels:false,
+    showDims:false,
     ref:{ corner:2, ox:0, oy:0, oz:0 },
     points:[
       { x:0,    y:0,    h:2.9 },
       { x:-7,   y:0,    h:3   },
       { x:-9.5, y:0,    h:3   },
-      { x:-6.2, y:-9.5, h:2.5 },
-      { x:0,    y:-9.5, h:2.5 },
+      { x:-6.2, y:-9.5, h:2.4 },
+      { x:0,    y:-9.5, h:2.4 },
       { x:2.5,  y:7.5,  h:3   },
     ],
     sails:[
-      { on:true,  shape:3, bw:5.8, bl:3.6, a:6.4, b:8, c:4, dx:0, dz:0, posts:[3,4,0], color:'#c0392b', opacity:1 },
-      { on:false, shape:3, bw:3,   bl:3,   a:3,   b:3, c:3, dx:0, dz:0, posts:[1,3,4], color:'#2c6fbb', opacity:1 },
+      { on:true,  shape:3, bw:5.8, bl:3.6, a:5, b:5, c:7, dx:1.2868314808985237, dz:-0.7441931775259615, rot:0, posts:[4,0,2], color:'#c0392b', opacity:1 },
+      { on:false, shape:3, bw:3,   bl:3,   a:3, b:3, c:3, dx:-0.5338480130976946, dz:0.8526257948434761, rot:0, posts:[1,3,4], color:'#2c6fbb', opacity:1 },
     ],
     furniture:{
-      table:  { on:true, x:-5.3,  y:-5.1, yaw:0, tw:1.1, tl:0.7, th:0.74 },
-      chair1: { on:true, x:-5.65, y:-4.75, yaw:90 },
-      chair2: { on:true, x:-3.85, y:-4.75, yaw:-90 },
-      pergola:{ on:true, x:-3.5,  y:-3.5, yaw:0, pw:3, pl:3, ph:2.2 },
+      table:  { on:true, x:-2.7527390952459085, y:-4.37908062646546,  yaw:0,   tw:0.9, tl:1.58, th:0.74 },
+      chair1: { on:true, x:-2.9305071385166768, y:-3.6133698799620877, yaw:90 },
+      chair2: { on:true, x:-1.7993745567905344, y:-3.606782007046153,  yaw:-90 },
+      pergola:{ on:true, x:-8.2, y:-3.7, yaw:0, pw:2.9, pl:2.9, ph:2.4 },
     },
-    person:{ on:true, x:-4.5, y:-6.5, h:1.9 },
+    person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
+    evalRect:{ on:false, x0:0, y0:0, x1:0, y1:0 },
   };
 }
 
@@ -558,15 +624,20 @@ function migrate(st){
     st.garden.walls=Object.assign({},d.garden.walls,st.garden.walls);
   }
   delete st.garden.wallH;
+  if(typeof st.garden.wallOpacity!=='number'||st.garden.wallOpacity<0.05||st.garden.wallOpacity>1) st.garden.wallOpacity=1;
   st.loc=Object.assign({},d.loc,st.loc||{});
   st.ref={ corner:2, ox:0, oy:0, oz:0 };
   if(!st.dateStr) st.dateStr=d.dateStr;
   if(typeof st.timeMin!=='number') st.timeMin=d.timeMin;
-  if(typeof st.showLabels!=='boolean') st.showLabels=false;
+  /* alte showLabels-Flagge auf die beiden neuen Schalter übertragen */
+  if(typeof st.showPostLabels!=='boolean') st.showPostLabels=(typeof st.showLabels==='boolean')?st.showLabels:false;
+  if(typeof st.showDims!=='boolean') st.showDims=(typeof st.showLabels==='boolean')?st.showLabels:false;
+  delete st.showLabels;
   if(!Array.isArray(st.points)||st.points.length<6) st.points=d.points;
   st.points=st.points.map((p,i)=>({ x:num(p&&p.x, d.points[i].x), y:num(p&&p.y, d.points[i].y), h:num(p&&p.h, d.points[i].h) }));
   if(!Array.isArray(st.sails)) st.sails=d.sails;
   st.sails=st.sails.map((s,i)=>Object.assign({}, d.sails[i]||d.sails[0], s||{}));
+  st.sails.forEach(s=>{ if(typeof s.rot!=='number'||isNaN(s.rot)) s.rot=0; });
   st.furniture=Object.assign({},d.furniture,st.furniture||{});
   ['table','chair1','chair2','pergola'].forEach(k=>{ st.furniture[k]=Object.assign({},d.furniture[k],st.furniture[k]||{}); });
   if(!st._pivotCorner){
@@ -577,6 +648,9 @@ function migrate(st){
   }
   if(!st.person) st.person=d.person; else st.person=Object.assign({},d.person,st.person);
   if(typeof st.person.h!=='number'||st.person.h<0.5) st.person.h=1.9;
+  st.evalRect=Object.assign({},d.evalRect,st.evalRect||{});
+  if(typeof st.evalRect.on!=='boolean') st.evalRect.on=false;
+  ['x0','y0','x1','y1'].forEach(k=>{ if(typeof st.evalRect[k]!=='number'||isNaN(st.evalRect[k])) st.evalRect[k]=0; });
   return st;
 }
 
@@ -598,6 +672,7 @@ const ropesGroup=new THREE.Group(); scene.add(ropesGroup);
 const furnGroup=new THREE.Group(); scene.add(furnGroup);
 const personGroup=new THREE.Group(); scene.add(personGroup);
 const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
+const evalRectGroup=new THREE.Group(); scene.add(evalRectGroup);
 const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
 const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,0.02,0),4,0x2266dd,0.9,0.5); scene.add(northArrow);
 const sunArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0.08,0),2,0xffdd00,0.5,0.3); sunArrow.visible=false; scene.add(sunArrow);
@@ -658,7 +733,7 @@ function sailSurface(s){
   const pg=posts.map(p=>({x:p.x,z:p.z})); const ys=posts.map(p=>p.y);
   const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
   const local=sailLocalCorners(s).map(v=>({x:v.x,z:v.z}));
-  const ang=bestAngle2D(local,pg,G); const ca=Math.cos(ang),sa=Math.sin(ang);
+  const ang=bestAngle2D(local,pg,G)+(s.rot||0)*DEG; const ca=Math.cos(ang),sa=Math.sin(ang);
   const cornersAt=c=>local.map(v=>({x:c.x+v.x*ca-v.z*sa, z:c.z+v.x*sa+v.z*ca}));
   const inside=c=>cornersAt(c).every(p=>pointInPoly(p,pg));
   const off={x:s.dx||0,z:s.dz||0}; let center={x:G.x+off.x,z:G.z+off.z};
@@ -681,7 +756,8 @@ function buildGarden(){
   gridHelper=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)),0x4a5a48,0x4a5a48);
   gridHelper.material.opacity=0.35; gridHelper.material.transparent=true; gridHelper.position.y=0.01; scene.add(gridHelper);
   if(wallsGroup) scene.remove(wallsGroup); wallsGroup=new THREE.Group();
-  const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide}); const th=0.08;
+  const wOp=(typeof S.garden.wallOpacity==='number')?S.garden.wallOpacity:1;
+  const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide,transparent:wOp<0.999,opacity:wOp,depthWrite:wOp>0.999}); const th=0.08;
   const mk=(wk,bw,bd,x,z,h)=>{ if(!(h>0.01)) return; const m=new THREE.Mesh(new THREE.BoxGeometry(bw,h,bd),wMat); m.position.set(x,h/2,z); m.castShadow=true; m.receiveShadow=true; m.userData.wallKey=wk; wallsGroup.add(m); };
   mk('yt',w,th,0,-d/2, W.yt); mk('y0',w,th,0, d/2, W.y0); mk('xb',th,d,-w/2,0, W.xb); mk('x0',th,d, w/2,0, W.x0);
   scene.add(wallsGroup);
@@ -770,32 +846,78 @@ function buildPerson(){
 /* ---- Labels ---- */
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function makeTextSprite(lines,hex){
-  const fs=20,lh=24,pad=10; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+  const fs=40,lh=48,pad=20; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
   const font=`600 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`; ctx.font=font;
   const w=Math.ceil(Math.max(...lines.map(l=>ctx.measureText(l).width)))+pad*2;
   const h=lines.length*lh+pad*2; canvas.width=w; canvas.height=h;
   ctx.font=font; ctx.textBaseline='top';
-  ctx.fillStyle='rgba(17,22,28,0.85)'; roundRect(ctx,0,0,w,h,9); ctx.fill();
-  ctx.strokeStyle=hex; ctx.lineWidth=2; roundRect(ctx,1,1,w-2,h-2,8); ctx.stroke();
+  ctx.fillStyle='rgba(17,22,28,0.85)'; roundRect(ctx,0,0,w,h,16); ctx.fill();
+  ctx.strokeStyle=hex; ctx.lineWidth=4; roundRect(ctx,2,2,w-4,h-4,14); ctx.stroke();
   lines.forEach((l,i)=>{ ctx.fillStyle=i===0?hex:'#d3dde7'; ctx.fillText(l,pad,pad+i*lh); });
   const tex=new THREE.CanvasTexture(canvas); tex.anisotropy=4;
   const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
-  const sc=0.004; spr.scale.set(w*sc,h*sc,1); spr.renderOrder=999; return spr;
+  /* Bildschirm-konstante Größe (unabhängig von der Kamera-Entfernung) – wird je Frame in updateLabelScales() gesetzt */
+  spr.userData.lbl={ aspect:w/h, hpx:h };
+  spr.scale.set(w*0.0015,h*0.0015,1); spr.renderOrder=999; return spr;
+}
+/* Hält die Label-Größe in Bildschirm-Pixeln konstant: Skala wächst linear mit dem Abstand zur Kamera. */
+const LABEL_K=0.000275;
+function updateLabelScales(){
+  const f=2*Math.tan(camera.fov*DEG/2);
+  labelsGroup.traverse(o=>{ if(o.isSprite && o.userData.lbl){
+    const d=camera.position.distanceTo(o.position);
+    const sy=o.userData.lbl.hpx*LABEL_K*f*d;
+    o.scale.set(sy*o.userData.lbl.aspect, sy, 1);
+  }});
+}
+/* Maßlinie wie auf einer technischen Zeichnung: Linie + zwei Pfeilspitzen + Maßzahl */
+function addDimLine(group,a,b,text,hex){
+  const A=a.clone(),B=b.clone();
+  const dir=new THREE.Vector3().subVectors(B,A); const len=dir.length(); if(len<0.08) return;
+  dir.normalize();
+  const ARROW=0x000000; /* Maßlinien & Pfeile immer schwarz */
+  const mat=new THREE.LineBasicMaterial({color:ARROW,depthTest:false,transparent:true});
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([A,B]),mat); line.renderOrder=998; group.add(line);
+  const headLen=Math.min(0.28,len*0.3), headW=headLen*0.16;
+  const cMat=new THREE.MeshBasicMaterial({color:ARROW,depthTest:false,transparent:true});
+  const mkHead=(pos,d)=>{ const c=new THREE.Mesh(new THREE.ConeGeometry(headW,headLen,12),cMat);
+    c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d); c.position.copy(pos); c.renderOrder=998; group.add(c); };
+  mkHead(A.clone().addScaledVector(dir, headLen/2), dir.clone().negate()); /* Spitze an A, nach außen */
+  mkHead(B.clone().addScaledVector(dir,-headLen/2), dir.clone());          /* Spitze an B, nach außen */
+  const mid=A.clone().add(B).multiplyScalar(0.5); mid.y+=0.16;
+  const spr=makeTextSprite([text],hex); spr.position.copy(mid); group.add(spr);
+}
+function buildDimensions(){
+  const dimHex='#e6edf3';
+  const {w,d}=S.garden; const off=0.7;
+  /* Garten: Breite (vorne) & Tiefe (rechts) */
+  addDimLine(labelsGroup,new THREE.Vector3(-w/2,0.05,d/2+off),new THREE.Vector3(w/2,0.05,d/2+off),fmt(w)+' m',dimHex);
+  addDimLine(labelsGroup,new THREE.Vector3(w/2+off,0.05,-d/2),new THREE.Vector3(w/2+off,0.05,d/2),fmt(d)+' m',dimHex);
+  /* Pfostenhöhen vertikal neben jedem Pfosten */
+  S.points.forEach((p,i)=>{ const top=poleTop(i); const x=top.x+0.24,z=top.z+0.24;
+    addDimLine(labelsGroup,new THREE.Vector3(x,0.02,z),new THREE.Vector3(x,Math.max(0.2,top.y),z),'H '+fmt(p.h)+' m',POST_HEX[i]); });
+  /* Aktive Segel: Kantenlängen zwischen den aufgehängten Ecken */
+  S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s);
+    for(let k=0;k<c.length;k++){ const a=c[k],b=c[(k+1)%c.length];
+      addDimLine(labelsGroup,a,b,fmt(a.distanceTo(b))+' m',s.color); } });
 }
 function buildLabels(){
-  labelsGroup.clear(); refMarker.visible=true; if(!S.showLabels) return;
-  S.points.forEach((p,i)=>{ const top=poleTop(i);
-    const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`,`H ${fmt(p.h)} m`],POST_HEX[i]);
-    spr.position.set(top.x,top.y+0.55,top.z); labelsGroup.add(spr); });
-  const B=refWorld();
-  const furnLabel=(key,name,hex,topY,dims,hx,hz)=>{ const f=S.furniture[key]; if(!f||!f.on) return;
-    const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);
-    const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
-    const spr=makeTextSprite([name,`${t('lbl-corner-ecke')} X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],hex);
-    spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr); };
-  const tab=S.furniture.table, pg=S.furniture.pergola;
-  if(tab) furnLabel('table',t('furn-table'),'#d9a066',(tab.th||0.74),`B ${fmt(tab.tw)} · L ${fmt(tab.tl)} · H ${fmt(tab.th)} m`,(tab.tw||1.1)/2,(tab.tl||0.7)/2);
-  if(pg) furnLabel('pergola',t('furn-pergola'),'#aab3bd',(pg.ph||2.2),`B ${fmt(pg.pw)} · L ${fmt(pg.pl)} · H ${fmt(pg.ph)} m`,(pg.pw||3)/2,(pg.pl||3)/2);
+  labelsGroup.clear(); refMarker.visible=true;
+  if(S.showPostLabels){
+    S.points.forEach((p,i)=>{ const top=poleTop(i);
+      const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`,`H ${fmt(p.h)} m`],POST_HEX[i]);
+      spr.position.set(top.x,top.y+0.55,top.z); labelsGroup.add(spr); });
+    const B=refWorld();
+    const furnLabel=(key,name,hex,topY,dims,hx,hz)=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+      const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);
+      const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
+      const spr=makeTextSprite([name,`${t('lbl-corner-ecke')} X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],hex);
+      spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr); };
+    const tab=S.furniture.table, pg=S.furniture.pergola;
+    if(tab) furnLabel('table',t('furn-table'),'#d9a066',(tab.th||0.74),`B ${fmt(tab.tw)} · L ${fmt(tab.tl)} · H ${fmt(tab.th)} m`,(tab.tw||1.1)/2,(tab.tl||0.7)/2);
+    if(pg) furnLabel('pergola',t('furn-pergola'),'#aab3bd',(pg.ph||2.2),`B ${fmt(pg.pw)} · L ${fmt(pg.pl)} · H ${fmt(pg.ph)} m`,(pg.pw||3)/2,(pg.pl||3)/2);
+  }
+  if(S.showDims) buildDimensions();
 }
 
 function updateSun(){
@@ -803,7 +925,7 @@ function updateSun(){
   const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
   let dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)); dir.applyAxisAngle(new THREE.Vector3(0,1,0),nr); sunDir.copy(dir);
   sun.position.copy(dir.clone().multiplyScalar(60)); sun.target.position.set(0,0,0); sun.target.updateMatrixWorld();
-  northArrow.setDirection(new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),nr));
+  northArrow.setDirection(new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),nr+NORTH_VIS_OFFSET));
   const day=alt>0; sun.intensity=day?2.2:0; hemi.intensity=day?0.55:0.18; scene.background.set(day?0xcfe3f2:0x223043);
   if(day){ const horiz=new THREE.Vector3(sunDir.x,0,sunDir.z); if(horiz.lengthSq()>0.001){ horiz.normalize(); const al=Math.max(S.garden.w,S.garden.d)/5; sunArrow.setDirection(horiz); sunArrow.setLength(al,al*0.2,al*0.13); } sunArrow.visible=true; } else { sunArrow.visible=false; }
   const altDeg=(alt/DEG).toFixed(1),azDeg=(((az/DEG)+180+360)%360).toFixed(0);
@@ -876,22 +998,62 @@ function sunDirAtMin(min){
   const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
   return { dir, alt };
 }
-function sailGroundArea(s,dir){
-  if(dir.y<=0.02) return 0;
-  const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(dir,-(P.y/dir.y)));
-  const clipped=clipPolyToGarden(proj);
-  return polyAreaXZ(clipped);
-}
+/* Punkt {x,z} eines 3D-Punktes entlang der Sonnenrichtung auf den Boden (y=0) projizieren */
+function projToGround(P,dir){ const g=P.clone().addScaledVector(dir,-(P.y/dir.y)); return {x:g.x,z:g.z}; }
+function sailGroundPoly(s,dir){ return sailCorners(s).map(P=>projToGround(P,dir)); }
+/* Bodenschatten des Pergola-Daches (Rechteck in Dachhöhe) als Polygon */
+function pergolaGroundShadow(dir){ const f=S.furniture.pergola; if(!f||!f.on||dir.y<=0.02) return null;
+  const B=refWorld(); const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const yr=(f.yaw||0)*DEG,ca=Math.cos(yr),sa=Math.sin(yr);
+  const ox=pw/2,oz=pl/2; /* Dachmittenversatz wie in makePergola() */
+  const ccx=B.x+f.x + ox*ca - oz*sa, ccz=B.z+f.y + ox*sa + oz*ca;
+  return [[-pw/2,-pl/2],[pw/2,-pl/2],[pw/2,pl/2],[-pw/2,pl/2]].map(([lx,lz])=>{
+    const wx=ccx+lx*ca-lz*sa, wz=ccz+lx*sa+lz*ca; return projToGround(new THREE.Vector3(wx,ph,wz),dir); }); }
+/* Bodenschatten der Wände (je Wand ein Quad zwischen Basislinie und projizierter Oberkante) */
+function wallGroundShadows(dir){ if(dir.y<=0.02) return []; const {w,d}=S.garden,W=S.garden.walls; const hw=w/2,hd=d/2; const polys=[];
+  const add=(b1,b2,h)=>{ if(!(h>0.01)) return; polys.push([ {x:b1[0],z:b1[1]}, {x:b2[0],z:b2[1]},
+    projToGround(new THREE.Vector3(b2[0],h,b2[1]),dir), projToGround(new THREE.Vector3(b1[0],h,b1[1]),dir) ]); };
+  add([-hw,-hd],[hw,-hd],W.yt); add([-hw,hd],[hw,hd],W.y0); add([-hw,-hd],[-hw,hd],W.xb); add([hw,-hd],[hw,hd],W.x0);
+  return polys; }
+/* Liefert die Grenzen des Auswertungsrechtecks in Weltkoordinaten (oder null) */
+function evalRectWorld(){ const rect=S.evalRect; if(!rect||!rect.on) return null; const B=refWorld();
+  return { x0:Math.min(rect.x0,rect.x1)+B.x, x1:Math.max(rect.x0,rect.x1)+B.x,
+           z0:Math.min(rect.y0,rect.y1)+B.z, z1:Math.max(rect.y0,rect.y1)+B.z }; }
+/* Tagesauswertung per Raster-Sampling des Bodens.
+   Eine Zelle zählt für ein Segel nur, wenn sie im Segelschatten liegt UND nicht bereits
+   durch Wand/Pergola beschattet ist (Überschneidung wird abgezogen). Innerhalb des Gartens. */
 function computeDayShade(){
   const start=600,end=1080,step=15, hours=(end-start)/60;
-  const sums=S.sails.map(()=>0);
-  for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1; const dayOk=alt>0&&dir.y>0.02;
-    S.sails.forEach((s,si)=>{ if(s.on && dayOk) sums[si]+=sailGroundArea(s,dir)*wgt; }); }
-  const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, perSail:[], total_m2h:0, total_avg_m2:0 };
-  S.sails.forEach((s,si)=>{ if(!s.on) return; const integral=sums[si]*step/60, avg=integral/hours;
-    res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg) });
-    res.total_m2h+=integral; res.total_avg_m2+=avg; });
+  const {w,d}=S.garden; const hw=w/2,hd=d/2;
+  const NX=Math.max(12,Math.min(70,Math.round(w/0.2))), NY=Math.max(12,Math.min(70,Math.round(d/0.2)));
+  const cellA=(w/NX)*(d/NY);
+  const activeIdx=S.sails.map((s,i)=>s.on?i:-1).filter(i=>i>=0);
+  const sums=S.sails.map(()=>0), sumsRect=S.sails.map(()=>0);
+  const Rw=evalRectWorld(); const rectOn=!!Rw;
+  const cells=[];
+  for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+    for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+      const inRect=Rw?(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1):false;
+      cells.push({x:cx,z:cz,inRect}); } }
+  for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1;
+    if(!(alt>0&&dir.y>0.02)) continue;
+    const blockers=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) blockers.push(pg);
+    const sailPolys=activeIdx.map(i=>sailGroundPoly(S.sails[i],dir));
+    for(const c of cells){
+      let blocked=false; for(const bp of blockers){ if(pointInPoly(c,bp)){ blocked=true; break; } }
+      if(blocked) continue;
+      activeIdx.forEach((si,k)=>{ if(pointInPoly(c,sailPolys[k])){ sums[si]+=cellA*wgt; if(c.inRect) sumsRect[si]+=cellA*wgt; } });
+    }
+  }
+  const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, gridM:ROUND(w/NX), rectOn, perSail:[],
+    total_m2h:0, total_avg_m2:0, total_rect_m2h:0, total_rect_avg_m2:0 };
+  S.sails.forEach((s,si)=>{ if(!s.on) return;
+    const integral=sums[si]*step/60, avg=integral/hours;
+    const integralR=sumsRect[si]*step/60, avgR=integralR/hours;
+    res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg),
+      integral_rect_m2h:ROUND(integralR), avg_rect_m2:ROUND(avgR) });
+    res.total_m2h+=integral; res.total_avg_m2+=avg; res.total_rect_m2h+=integralR; res.total_rect_avg_m2+=avgR; });
   res.total_m2h=ROUND(res.total_m2h); res.total_avg_m2=ROUND(res.total_avg_m2);
+  res.total_rect_m2h=ROUND(res.total_rect_m2h); res.total_rect_avg_m2=ROUND(res.total_rect_avg_m2);
   return res;
 }
 function renderDayShade(){
@@ -900,7 +1062,10 @@ function renderDayShade(){
   if(!r.perSail.length){ out.innerHTML=t('dayshade-none'); renderDayHud(r); return; }
   let html=`<span style="color:var(--muted)">${r.date} · 10–18h</span><br>`;
   r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
-  if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
+  if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span><br>`;
+  if(r.rectOn){ html+=`<div style="margin-top:6px;color:#f1c40f">▣ ${t('dayshade-rect')}</div>`;
+    r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_rect_m2)} m²)</span><br>`; });
+    if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span>`; }
   out.innerHTML=html;
   renderDayHud(r);
 }
@@ -909,20 +1074,49 @@ function renderDayHud(r){
   if(!r.perSail.length){ hud.innerHTML=''; return; }
   let h=`<div class="dh-label">${t('sec-dayshade')} · ${r.date}</div>`;
   r.perSail.forEach(p=>{ h+=`<span style="color:var(--muted)">${t('shadow-sail')} ${p.sail}:</span> <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
-  if(r.perSail.length>1) h+=`<span style="color:var(--muted)">${t('dayshade-total')}:</span> <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span>`;
+  if(r.perSail.length>1) h+=`<span style="color:var(--muted)">${t('dayshade-total')}:</span> <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span><br>`;
+  if(r.rectOn){ h+=`<span class="dh-rect">▣ ${t('dayshade-rect')}:</span> `;
+    if(r.perSail.length>1) h+=`<b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span>`;
+    else if(r.perSail.length===1){ const p=r.perSail[0]; h+=`<b>${fmt(p.integral_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_rect_m2)} m²)</span>`; } }
   hud.innerHTML=h;
 }
 
+function buildEvalRect(){ evalRectGroup.clear(); const Rw=evalRectWorld(); if(!Rw) return;
+  const y=0.045; const pts=[ new THREE.Vector3(Rw.x0,y,Rw.z0), new THREE.Vector3(Rw.x1,y,Rw.z0),
+    new THREE.Vector3(Rw.x1,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z0) ];
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineDashedMaterial({color:0xf1c40f,dashSize:0.25,gapSize:0.18,depthTest:false,transparent:true}));
+  line.computeLineDistances(); line.renderOrder=997; evalRectGroup.add(line);
+  const arr=new Float32Array([ Rw.x0,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z1,
+    Rw.x0,y-0.01,Rw.z0, Rw.x1,y-0.01,Rw.z1, Rw.x0,y-0.01,Rw.z1 ]);
+  const fg=new THREE.BufferGeometry(); fg.setAttribute('position',new THREE.BufferAttribute(arr,3));
+  evalRectGroup.add(new THREE.Mesh(fg,new THREE.MeshBasicMaterial({color:0xf1c40f,transparent:true,opacity:0.09,side:THREE.DoubleSide,depthWrite:false})));
+}
 function updateRef(){ refMarker.position.copy(refWorld()); }
 function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); updateSun(); renderDayShade(); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
-function touch(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(saveState,300); }
+function touch(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveState(); snapshot(); },350); }
 function saveState(){ const j=JSON.stringify(S); try{ localStorage.setItem(STORE_KEY,j); }catch(e){} try{ document.cookie=STORE_KEY+'='+encodeURIComponent(j).slice(0,3900)+';path=/;max-age=31536000;SameSite=Lax'; }catch(e){} }
 function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return JSON.parse(v); }catch(e){} try{ const m=document.cookie.match('(?:^|;)\\s*'+STORE_KEY+'=([^;]*)'); if(m) return JSON.parse(decodeURIComponent(m[1])); }catch(e){} return null; }
+
+/* ---- Undo/Redo (bis 20 Schritte zurück) ---- */
+const HIST_MAX=21; /* aktueller Stand + 20 frühere */
+let history=[], hidx=-1, suppressHistory=false;
+function snapshot(){ if(suppressHistory) return; const j=JSON.stringify(S);
+  if(history[hidx]===j) return;
+  history=history.slice(0,hidx+1); history.push(j);
+  while(history.length>HIST_MAX) history.shift();
+  hidx=history.length-1; updateHistButtons(); }
+function applyHistory(){ suppressHistory=true; S=migrate(JSON.parse(history[hidx]))||defaultState();
+  refreshUI(); saveState(); suppressHistory=false; updateHistButtons(); }
+function undo(){ if(hidx>0){ hidx--; applyHistory(); } }
+function redo(){ if(hidx<history.length-1){ hidx++; applyHistory(); } }
+function updateHistButtons(){ const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');
+  if(u) u.disabled=hidx<=0; if(r) r.disabled=hidx>=history.length-1; }
 
 /* ---- UI ---- */
 const $=id=>document.getElementById(id);
@@ -960,6 +1154,7 @@ function wireStaticUI(){
   $('gd').value=S.garden.d; $('gd').dataset.default=DEF.garden.d; linkId('gd','gdn',3,30,v=>{S.garden.d=v;buildGarden();updateAll();});
   const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,7,v=>{S.garden.walls[key]=v;buildGarden();}); };
   wallRow('wx0','wx0n','x0'); wallRow('wxb','wxbn','xb'); wallRow('wy0','wy0n','y0'); wallRow('wyt','wytn','yt');
+  $('wallop').value=S.garden.wallOpacity; $('wallop').dataset.default=DEF.garden.wallOpacity; linkId('wallop','wallopn',0.1,1,v=>{S.garden.wallOpacity=v;buildGarden();});
   $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
   const syncCity=()=>{ $('city').value=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; if(!$('city').value||$('city').selectedIndex<0) $('city').value='manual'; };
   $('city').onchange=e=>{ if(e.target.value==='manual') return; const [la,lo]=e.target.value.split(',').map(Number);
@@ -971,7 +1166,8 @@ function wireStaticUI(){
   $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
   $('time').oninput=e=>{S.timeMin=+e.target.value; setTimeInputs(); updateSun(); touch();};
   $('timeInput').onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
-  const sl=$('showLabels'); sl.checked=S.showLabels; sl.onchange=()=>{ S.showLabels=sl.checked; buildLabels(); touch(); };
+  const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
+  const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
 }
 function setTimeInputs(){ const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0'); $('timeInput').value=`${hh}:${mm}`; }
@@ -980,6 +1176,13 @@ let playing=false;
 $('play').onclick=()=>{ playing=!playing; $('play').textContent=playing?t('btn-pause'):t('btn-play'); if(playing) loopPlay(); };
 function loopPlay(){ if(!playing) return; S.timeMin=(S.timeMin+4)%1440; $('time').value=S.timeMin; setTimeInputs(); updateSun(); setTimeout(()=>requestAnimationFrame(loopPlay),40); }
 $('now').onclick=()=>{ const n=new Date(); S.dateStr=n.toISOString().slice(0,10); S.timeMin=n.getHours()*60+n.getMinutes(); $('date').value=S.dateStr; $('time').value=S.timeMin; setTimeInputs(); updateSun(); touch(); };
+$('undoBtn').onclick=undo; $('redoBtn').onclick=redo;
+$('btnDrawRect').onclick=()=>setDrawRect(!drawingRect);
+$('btnClearRect').onclick=()=>{ S.evalRect.on=false; setDrawRect(false); buildEvalRect(); renderDayShade(); touch(); };
+window.addEventListener('keydown',e=>{ if(/INPUT|SELECT|TEXTAREA/.test((e.target&&e.target.tagName)||'')) return;
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){ e.preventDefault(); undo(); }
+  else if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){ e.preventDefault(); redo(); } });
 
 function buildPointEditors(){
   const host=$('points'); host.innerHTML='';
@@ -1007,6 +1210,7 @@ function buildSailEditors(){
       <div class="seg"><button data-n="3" class="${s.shape===3?'active':''}">${t('lbl-3corners')}</button><button data-n="4" class="${s.shape===4?'active':''}">${t('lbl-4corners')}</button></div>
       ${sizeHtml}${cornersHtml}
       <div class="row"><label>${t('lbl-rotate')}</label><button class="minib rotL" title="${t('rot-ccw')}">⟲</button><button class="minib rotR" title="${t('rot-cw')}">⟳</button><button class="minib ctr" title="${t('center-tip')}">${t('lbl-center')}</button></div>
+      ${rowHTML(t('lbl-sail-rot'),'srot',-180,180,1,s.rot||0,'°',0)}
       <div class="row"><label>${t('lbl-color')}</label><input class="scol" type="color" value="${s.color}"></div>
       ${rowHTML(t('lbl-opacity'),'so',0.3,1,0.05,s.opacity,'',1)}
       <p class="hint" style="margin:6px 0 0">${t('hint-sail-note')}</p>`;
@@ -1019,7 +1223,8 @@ function buildSailEditors(){
     card.querySelectorAll('.ps').forEach(sel=>sel.onchange=e=>{ s.posts[+sel.dataset.k]=+e.target.value; updateAll(); touch(); });
     q('.rotL').onclick=()=>{ rotateSail(s,-1); buildSailEditors(); updateAll(); touch(); };
     q('.rotR').onclick=()=>{ rotateSail(s, 1); buildSailEditors(); updateAll(); touch(); };
-    q('.ctr').onclick=()=>{ s.dx=0; s.dz=0; updateAll(); touch(); };
+    q('.ctr').onclick=()=>{ s.dx=0; s.dz=0; s.rot=0; const sr=card.querySelector('.srot'),srn=card.querySelector('.srotn'); if(sr){sr.value=0;srn.value='0';} updateAll(); touch(); };
+    link(card,'srot',-180,180,v=>{s.rot=v;updateAll();});
     q('.scol').oninput=e=>{ s.color=e.target.value; buildSails(); touch(); };
     link(card,'so',0.3,1,v=>{s.opacity=v;buildSails();});
     host.appendChild(card);
@@ -1063,24 +1268,28 @@ function syncPersonInputs(){ const card=document.querySelector('#person .card');
   if(px){ px.value=p.x.toFixed(1); pxn.value=fmt(p.x); } if(py){ py.value=p.y.toFixed(1); pyn.value=fmt(p.y); } }
 
 $('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   const n=new Date(),p=x=>String(x).padStart(2,'0');
-  a.download=`shade-sail-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}.json`;
-  a.click(); URL.revokeObjectURL(a.href); };
+  const def=`shade-sail-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}`;
+  let name=prompt(t('export-name-prompt'),def);
+  if(name===null) return; /* Abbruch */
+  name=name.trim()||def; name=name.replace(/[\\/:*?"<>|]+/g,'_'); if(!/\.json$/i.test(name)) name+='.json';
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=name; a.click(); URL.revokeObjectURL(a.href); };
 $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
+  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); snapshot(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
   r.readAsText(file); e.target.value=''; };
-$('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); } };
+$('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); snapshot(); } };
 
 function refreshUI(){ applyTranslations(); wireStaticUI(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
 
 function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 window.addEventListener('resize',onResize);
-function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
+function animate(){ requestAnimationFrame(animate); controls.update(); updateLabelScales(); renderer.render(scene,camera); }
 
 /* ---- Maus-Drag & Click-to-Scroll ---- */
-let drag=null; let pointerDownPos=null;
+let drag=null; let pointerDownPos=null; let drawingRect=false;
+function setDrawRect(on){ drawingRect=on; renderer.domElement.style.cursor=on?'crosshair':''; const b=document.getElementById('btnDrawRect'); if(b) b.classList.toggle('active',on); }
 function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
 function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
 function scrollToCard(selector){ const el=document.querySelector(selector); if(!el) return; el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight'); }
@@ -1088,51 +1297,66 @@ function handleClick(e){ raycaster.setFromCamera(ndc(e),camera);
   /* poles */
   const poles=raycaster.intersectObjects(polesGroup.children,false);
   if(poles.length){ const idx=Math.floor(polesGroup.children.indexOf(poles[0].object)/2); if(idx>=0) scrollToCard(`#points .card[data-post-idx="${idx}"]`); return; }
-  /* sails */
-  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
-  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); return; }
+  /* furniture (vor Segel, damit Möbel unter dem Segel erreichbar bleiben) */
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; if(o){ scrollToCard(`#furniture .card[data-fkey="${o.userData.furnKey}"]`); return; } }
   /* person */
   const ph=raycaster.intersectObjects(personGroup.children,false);
   if(ph.length){ scrollToCard('#person .card'); return; }
-  /* furniture */
-  const fh=raycaster.intersectObjects(furnGroup.children,true);
-  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; if(o){ scrollToCard(`#furniture .card[data-fkey="${o.userData.furnKey}"]`); return; } }
+  /* sails */
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); return; }
   /* walls */
   if(wallsGroup){ const wh=raycaster.intersectObjects(wallsGroup.children,false);
     if(wh.length){ const wk=wh[0].object.userData.wallKey; scrollToCard(wk?`#row-wall-${wk}`:'#group-garden'); return; } }
 }
 function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,y:e.clientY}; raycaster.setFromCamera(ndc(e),camera);
-  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
-  if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
-  /* person drag */
-  const ph=raycaster.intersectObjects(personGroup.children,false);
-  if(ph.length){ const pt=groundPoint(e,0); if(pt){ drag={ type:'person', last:pt }; controls.enabled=false; return; } }
+  /* Auswertungs-Rechteck aufziehen (hat Vorrang) */
+  if(drawingRect){ const pt=groundPoint(e,0); if(pt){ const B=refWorld();
+    S.evalRect.on=true; S.evalRect.x0=pt.x-B.x; S.evalRect.y0=pt.z-B.z; S.evalRect.x1=S.evalRect.x0; S.evalRect.y1=S.evalRect.y0;
+    drag={ type:'rect' }; controls.enabled=false; buildEvalRect(); return; } }
+  /* Möbel & Person zuerst prüfen, damit sie auch UNTER einem Segel greifbar bleiben */
   const fh=raycaster.intersectObjects(furnGroup.children,true);
   if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; const pt=groundPoint(e,0);
     if(o && pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; } }
+  /* person drag */
+  const ph=raycaster.intersectObjects(personGroup.children,false);
+  if(ph.length){ const pt=groundPoint(e,0); if(pt){ drag={ type:'person', last:pt }; controls.enabled=false; return; } }
+  /* Segel zuletzt – greift überall dort, wo kein Möbel/Person darunter liegt */
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
 }
 function onPointerMove(e){ if(!drag) return;
+  if(drag.type==='rect'){ const pt=groundPoint(e,0); if(pt){ const B=refWorld();
+      S.evalRect.x1=pt.x-B.x; S.evalRect.y1=pt.z-B.z; buildEvalRect(); } return; }
   if(drag.type==='sail'){ const pt=groundPoint(e,drag.y); if(pt){ const s=S.sails[drag.si];
       s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
       const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;
-      buildSails(); buildRopes(); updateRopeReadouts(); updateShadow(sunDir.y>0.02); touch(); } }
+      buildSails(); buildRopes(); updateRopeReadouts(); buildLabels(); updateShadow(sunDir.y>0.02); touch(); } }
   else if(drag.type==='person'){ const pt=groundPoint(e,0); if(pt){ const p=S.person; p.x+=(pt.x-drag.last.x); p.y+=(pt.z-drag.last.z); drag.last.copy(pt);
-      buildPerson(); syncPersonInputs(); touch(); } }
+      buildPerson(); buildLabels(); syncPersonInputs(); touch(); } }
   else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
-      buildFurniture(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
+      buildFurniture(); buildLabels(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
-function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
+function onPointerUp(e){ const wasDrag=!!drag; const wasRect=drag&&drag.type==='rect'; drag=null; controls.enabled=true;
+  if(wasRect){ setDrawRect(false);
+    const r=S.evalRect; if(Math.abs(r.x1-r.x0)<0.3||Math.abs(r.y1-r.y0)<0.3){ r.on=false; buildEvalRect(); }
+    renderDayShade(); touch(); pointerDownPos=null; return; }
   if(wasDrag) renderDayShade();
   else if(pointerDownPos && e && Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y)<6) handleClick(e);
   pointerDownPos=null;
 }
 renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
 window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
+/* Doppelklick auf ein Segel → zugehörige Karte im Panel hervorheben */
+renderer.domElement.addEventListener('dblclick',e=>{ raycaster.setFromCamera(ndc(e),camera);
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); } });
 
 $('panel').addEventListener('dblclick',e=>{ const el=e.target; if(el.tagName==='INPUT'&&el.type==='range'&&el.dataset.default!==undefined){ el.value=el.dataset.default; el.dispatchEvent(new Event('input',{bubbles:true})); } });
 
 applyTranslations();
-refreshUI(); onResize(); animate();
+refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
 </script>
 </body>
 </html>
