@@ -5,5 +5,4 @@
 > Änderungswünsche berücksichtigt und umgesetzt. Anschließend wird diese Datei
 > **wieder geleert** (nur diese Überschrift + Workflow-Hinweis bleiben stehen).
 
-## Offene Wünsche
-- die Position von Tisch und Pergola sowie der Pfosten soll auch bei Maßen angezeigt werden
+ 

@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 4.6 · DE/EN/RU · Pfosten-Optimierung · Auswertungs-Bereich Eingabe · 40× Undo</div>
+      <div class="ver">Version 4.7 · DE/EN/RU · Pfosten-Optimierung · Sonnen-Fix · Positions-Labels</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -926,6 +926,16 @@ function buildDimensions(){
   S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s);
     for(let k=0;k<c.length;k++){ const a=c[k],b=c[(k+1)%c.length];
       addDimLine(labelsGroup,a,b,fmt(a.distanceTo(b))+' m',s.color); } });
+  /* Positions-Labels für Pfosten und Möbel (nur wenn Pfosten-Labels nicht bereits aktiv) */
+  if(!S.showPostLabels){
+    const B=refWorld();
+    S.points.forEach((p,i)=>{ const top=poleTop(i);
+      const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`],POST_HEX[i]);
+      spr.position.set(top.x,0.5,top.z); labelsGroup.add(spr); });
+    const tab=S.furniture.table, pg=S.furniture.pergola;
+    if(tab&&tab.on){ const spr=makeTextSprite([t('furn-table'),`X ${fmt(tab.x)}  Y ${fmt(tab.y)}`],'#d9a066'); spr.position.set(B.x+tab.x,(tab.th||0.74)+0.4,B.z+tab.y); labelsGroup.add(spr); }
+    if(pg&&pg.on){ const spr=makeTextSprite([t('furn-pergola'),`X ${fmt(pg.x)}  Y ${fmt(pg.y)}`],'#aab3bd'); spr.position.set(B.x+pg.x,(pg.ph||2.2)+0.4,B.z+pg.y); labelsGroup.add(spr); }
+  }
 }
 function buildLabels(){
   labelsGroup.clear(); refMarker.visible=true;
@@ -949,7 +959,7 @@ function buildLabels(){
 function updateSun(){
   const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(S.timeMin);
   const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
-  let dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)); dir.applyAxisAngle(new THREE.Vector3(0,1,0),nr); sunDir.copy(dir);
+  let dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),Math.cos(az)*Math.cos(alt)); dir.applyAxisAngle(new THREE.Vector3(0,1,0),nr); sunDir.copy(dir);
   sun.position.copy(dir.clone().multiplyScalar(60)); sun.target.position.set(0,0,0); sun.target.updateMatrixWorld();
   northArrow.setDirection(new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),nr+NORTH_VIS_OFFSET));
   const day=alt>0; sun.intensity=day?2.2:0; hemi.intensity=day?0.55:0.18; scene.background.set(day?0xcfe3f2:0x223043);
@@ -1021,7 +1031,7 @@ function polyAreaXZ(pts){
 function sunDirAtMin(min){
   const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(min);
   const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
-  const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),-Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
+  const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
   return { dir, alt };
 }
 /* Punkt {x,z} eines 3D-Punktes entlang der Sonnenrichtung auf den Boden (y=0) projizieren */
@@ -1089,6 +1099,11 @@ function optimizePostAssignment(){
     if(r===0) return [[]];
     return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));
   }
+  function isCollinear(posts){
+    if(posts.length<3) return false;
+    const a=S.points[posts[0]],b=S.points[posts[1]],c=S.points[posts[2]];
+    return Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x))<0.1;
+  }
   function fastScore(assignment){
     const orig=activeSails.map(s=>[...S.sails[s.idx].posts]);
     activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=assignment[i]; });
@@ -1115,13 +1130,16 @@ function optimizePostAssignment(){
   let best=-1,bestAssign=null;
   if(activeSails.length===1){
     for(const p of perms(allPosts,activeSails[0].shape)){
+      if(activeSails[0].shape===3&&isCollinear(p)) continue;
       const sc=fastScore([p]); if(sc>best){best=sc;bestAssign=[p];}
     }
   } else if(activeSails.length>=2){
     const [s0,s1]=activeSails;
     for(const p0 of perms(allPosts,s0.shape)){
+      if(s0.shape===3&&isCollinear(p0)) continue;
       const rem=allPosts.filter(i=>!p0.includes(i));
       for(const p1 of perms(rem,Math.min(s1.shape,rem.length))){
+        if(s1.shape===3&&isCollinear(p1)) continue;
         const sc=fastScore([p0,p1]); if(sc>best){best=sc;bestAssign=[p0,p1];}
       }
     }
