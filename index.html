@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.2 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm) · Pfosten automatisch an die Wand</div>
+      <div class="ver">Version 5.3 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm) · Gesamtschatten als Vereinigung (keine Doppelzählung der Überlappung) · Pfosten automatisch an die Wand</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -330,6 +330,7 @@ const TRANSLATIONS = {
     'shadow-sun': '☀️ in der Sonne',
     'dayshade-none': 'Kein aktives Segel.',
     'dayshade-total': 'Gesamt',
+    'dayshade-overlap': 'Überlappung (verschwendet)',
     'sun-alt': 'Höhe über Horizont',
     'sun-az': 'Azimut (0°=N)',
     'sun-status': 'Status',
@@ -350,7 +351,7 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Körpergröße',
     'btn-optimize-sails': '🎯 Ideale Segel-Position berechnen',
-    'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
+    'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Bewertet wird der Gesamtschatten als Vereinigung – Flächen, die zwei Segel gleichzeitig beschatten, zählen nur einmal (keine Doppelzählung), Überlappung gilt als Verschwendung. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
   },
@@ -444,6 +445,7 @@ const TRANSLATIONS = {
     'shadow-sun': '☀️ in sun',
     'dayshade-none': 'No active sail.',
     'dayshade-total': 'Total',
+    'dayshade-overlap': 'Overlap (wasted)',
     'sun-alt': 'Altitude',
     'sun-az': 'Azimuth (0°=N)',
     'sun-status': 'Status',
@@ -464,7 +466,7 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Height',
     'btn-optimize-sails': '🎯 Calculate ideal sail position',
-    'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The result is only applied if it improves on the current layout.',
+    'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The objective is the total shadow as a union – areas shaded by two sails at once count only once (no double counting), overlap is treated as waste. The result is only applied if it improves on the current layout.',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
   },
@@ -558,6 +560,7 @@ const TRANSLATIONS = {
     'shadow-sun': '☀️ на солнце',
     'dayshade-none': 'Нет активных парусов.',
     'dayshade-total': 'Итого',
+    'dayshade-overlap': 'Перекрытие (впустую)',
     'sun-alt': 'Высота над горизонтом',
     'sun-az': 'Азимут (0°=С)',
     'sun-status': 'Статус',
@@ -578,7 +581,7 @@ const TRANSLATIONS = {
     'person-label': 'Человек',
     'lbl-person-h': 'Рост',
     'btn-optimize-sails': '🎯 Вычислить идеальное положение парусов',
-    'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Результат применяется только если он лучше текущего.',
+    'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Оценивается общая тень как объединение – области, затенённые двумя парусами одновременно, считаются один раз (без двойного счёта), перекрытие считается потерей. Результат применяется только если он лучше текущего.',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
   }
@@ -1097,6 +1100,7 @@ function computeDayShade(){
   const cellA=(w/NX)*(d/NY);
   const activeIdx=S.sails.map((s,i)=>s.on?i:-1).filter(i=>i>=0);
   const sums=S.sails.map(()=>0), sumsRect=S.sails.map(()=>0);
+  let unionSum=0, unionSumRect=0;   /* Vereinigung: jede Zelle zaehlt nur EINMAL, egal von wie vielen Segeln beschattet -> keine Doppelzaehlung der Ueberlappung */
   const Rw=evalRectWorld(); const rectOn=!!Rw;
   const cells=[];
   for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
@@ -1110,19 +1114,25 @@ function computeDayShade(){
     for(const c of cells){
       let blocked=false; for(const bp of blockers){ if(pointInPoly(c,bp)){ blocked=true; break; } }
       if(blocked) continue;
-      activeIdx.forEach((si,k)=>{ if(pointInPoly(c,sailPolys[k])){ sums[si]+=cellA*wgt; if(c.inRect) sumsRect[si]+=cellA*wgt; } });
+      let anyHit=false;
+      activeIdx.forEach((si,k)=>{ if(pointInPoly(c,sailPolys[k])){ sums[si]+=cellA*wgt; if(c.inRect) sumsRect[si]+=cellA*wgt; anyHit=true; } });
+      if(anyHit){ unionSum+=cellA*wgt; if(c.inRect) unionSumRect+=cellA*wgt; }
     }
   }
   const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, gridM:ROUND(w/NX), rectOn, perSail:[],
-    total_m2h:0, total_avg_m2:0, total_rect_m2h:0, total_rect_avg_m2:0 };
+    total_m2h:0, total_avg_m2:0, total_rect_m2h:0, total_rect_avg_m2:0, overlap_m2h:0, overlap_rect_m2h:0 };
+  let sumInt=0, sumIntR=0;   /* Summe der Einzel-Segel-Integrale (mit Doppelzaehlung) -> nur fuer die Ueberlappungs-Diagnose */
   S.sails.forEach((s,si)=>{ if(!s.on) return;
     const integral=sums[si]*step/60, avg=integral/hours;
     const integralR=sumsRect[si]*step/60, avgR=integralR/hours;
     res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg),
       integral_rect_m2h:ROUND(integralR), avg_rect_m2:ROUND(avgR) });
-    res.total_m2h+=integral; res.total_avg_m2+=avg; res.total_rect_m2h+=integralR; res.total_rect_avg_m2+=avgR; });
-  res.total_m2h=ROUND(res.total_m2h); res.total_avg_m2=ROUND(res.total_avg_m2);
-  res.total_rect_m2h=ROUND(res.total_rect_m2h); res.total_rect_avg_m2=ROUND(res.total_rect_avg_m2);
+    sumInt+=integral; sumIntR+=integralR; });
+  /* TOTAL = Vereinigung (echter Gesamtschatten OHNE Doppelzaehlung). Ueberlappung = Summe - Vereinigung = verschwendete Doppel-Beschattung. */
+  const unionInt=unionSum*step/60, unionIntR=unionSumRect*step/60;
+  res.total_m2h=ROUND(unionInt); res.total_avg_m2=ROUND(unionInt/hours);
+  res.total_rect_m2h=ROUND(unionIntR); res.total_rect_avg_m2=ROUND(unionIntR/hours);
+  res.overlap_m2h=ROUND(Math.max(0,sumInt-unionInt)); res.overlap_rect_m2h=ROUND(Math.max(0,sumIntR-unionIntR));
   return res;
 }
 function optimizePostAssignment(){
@@ -1426,9 +1436,11 @@ function renderDayShade(){
   let html=`<span style="color:var(--muted)">${r.date} · 10–18h</span><br>`;
   r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
   if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span><br>`;
+  if(r.perSail.length>1 && r.overlap_m2h>0.05) html+=`<span style="color:#e67e22">⚠︎ ${t('dayshade-overlap')}: ${fmt(r.overlap_m2h)} m²·h</span><br>`;
   if(r.rectOn){ html+=`<div style="margin-top:6px;color:#f1c40f">▣ ${t('dayshade-rect')}</div>`;
     r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_rect_m2)} m²)</span><br>`; });
-    if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span>`; }
+    if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span><br>`;
+    if(r.perSail.length>1 && r.overlap_rect_m2h>0.05) html+=`<span style="color:#e67e22">⚠︎ ${t('dayshade-overlap')}: ${fmt(r.overlap_rect_m2h)} m²·h</span>`; }
   out.innerHTML=html;
   renderDayHud(r);
 }
