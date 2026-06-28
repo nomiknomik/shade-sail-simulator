@@ -84,6 +84,8 @@
   .group.highlight{ animation:card-flash .9s ease-out forwards }
   @keyframes row-flash{ 0%{background:rgba(244,169,60,.35);box-shadow:0 0 0 2px var(--sun)} 100%{background:transparent;box-shadow:none} }
   .row.highlight{ animation:row-flash 1.2s ease-out forwards;border-radius:6px }
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,30,40,.92);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:500;pointer-events:none;max-width:440px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5);display:none;transition:opacity .3s}
+  #overlapWarn{background:rgba(180,30,30,.88);border:1px solid #e74c3c;border-radius:8px;padding:8px 12px;font-size:12px;color:#fff;pointer-events:none;display:none;font-weight:600}
 </style>
 </head>
 <body>
@@ -91,7 +93,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.5 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Konfigurierbares Auswertungsfenster · Optimier-Button oben rechts (fix) · Pfosten automatisch an die Wand</div>
+      <div class="ver">Version 5.6 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Konfigurierbares Auswertungsfenster · Überlappungsschutz für Segel · Pfeil-hoch/runter in Eingabefeldern</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -214,6 +216,7 @@
   <main id="stage"><div id="hud"></div>
     <div id="topleft">
       <div id="dayHud"></div>
+      <div id="overlapWarn" data-i18n="warn-overlap"></div>
       <div id="histHud">
         <button id="undoBtn" data-i18n-title="btn-undo">↩</button>
         <button id="redoBtn" data-i18n-title="btn-redo">↪</button>
@@ -358,6 +361,8 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Bewertet wird der Gesamtschatten als Vereinigung – Flächen, die zwei Segel gleichzeitig beschatten, zählen nur einmal (keine Doppelzählung), Überlappung gilt als Verschwendung. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
+    'opt-overlap': '⛔ Optimierung abgebrochen – Segel würden sich überschneiden. Bisherige Position beibehalten.',
+    'warn-overlap': '⚠️ Segel überschneiden sich!',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -475,6 +480,8 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The objective is the total shadow as a union – areas shaded by two sails at once count only once (no double counting), overlap is treated as waste. The result is only applied if it improves on the current layout.',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
+    'opt-overlap': '⛔ Optimization cancelled – sails would overlap. Kept current layout.',
+    'warn-overlap': '⚠️ Sails overlap!',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -592,6 +599,8 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Оценивается общая тень как объединение – области, затенённые двумя парусами одновременно, считаются один раз (без двойного счёта), перекрытие считается потерей. Результат применяется только если он лучше текущего.',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
+    'opt-overlap': '⛔ Оптимизация отменена – сегели пересеклись бы. Сохранено текущее положение.',
+    'warn-overlap': '⚠️ Сегели пересекаются!',
   }
 };
 
@@ -1214,7 +1223,8 @@ function optimizeSailPositions(){
     if(btn){ btn.disabled=false; }
     if(btn2){ btn2.disabled=false; }
     applyTranslations();
-    if(resultMsg){ const st=document.getElementById('saveState'); if(st) st.textContent=resultMsg; }
+    updateOverlapWarning();
+    if(resultMsg){ showToast(resultMsg, 8000); }
   },16);
 }
 function _runSailOptimizer(){
@@ -1440,6 +1450,14 @@ function _runSailOptimizer(){
     }
   })();
 
+  /* ---- Überlappungsschutz: Segel dürfen sich nicht schneiden ---- */
+  if(sailsOverlap()){
+    S.points=beforeSnap.points;
+    beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
+    buildPointEditors(); buildSailEditors(); updateAll(); touch();
+    return t('opt-overlap');
+  }
+
   /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung uebernehmen ---- */
   const afterKPI=kpiNow();
   let key='opt-improved';
@@ -1452,6 +1470,45 @@ function _runSailOptimizer(){
   /* Meldung wird vom Aufrufer NACH applyTranslations() gesetzt */
   return t(key).replace('{a}',fmt(afterKPI)).replace('{b}',fmt(beforeKPI));
 }
+/* ---- Toast-Benachrichtigung im Hauptfenster ---- */
+function showToast(msg,ms=7000){
+  const el=document.getElementById('toast'); if(!el) return;
+  el.textContent=msg; el.style.display='block'; el.style.opacity='1';
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; },300); },ms);
+}
+
+/* ---- Segel-Überlappungsprüfung (Separating Axis Theorem, XZ-Ebene) ---- */
+function polysOverlap(A,B){
+  for(const poly of [A,B]){
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i],b=poly[(i+1)%poly.length];
+      const nx=-(b.z-a.z),nz=b.x-a.x;
+      let minA=Infinity,maxA=-Infinity,minB=Infinity,maxB=-Infinity;
+      for(const p of A){ const d=p.x*nx+p.z*nz; if(d<minA)minA=d; if(d>maxA)maxA=d; }
+      for(const p of B){ const d=p.x*nx+p.z*nz; if(d<minB)minB=d; if(d>maxB)maxB=d; }
+      if(maxA<=minB||maxB<=minA) return false;
+    }
+  }
+  return true;
+}
+function sailFootprint2D(s){ try{ return sailCorners(s).map(v=>({x:v.x,z:v.z})); }catch(e){ return []; } }
+function sailsOverlap(){
+  const active=S.sails.map((s,i)=>({s,i})).filter(({s})=>s.on);
+  for(let a=0;a<active.length;a++){
+    const fpA=sailFootprint2D(active[a].s); if(fpA.length<3) continue;
+    for(let b=a+1;b<active.length;b++){
+      const fpB=sailFootprint2D(active[b].s); if(fpB.length<3) continue;
+      if(polysOverlap(fpA,fpB)) return true;
+    }
+  }
+  return false;
+}
+function updateOverlapWarning(){
+  const el=document.getElementById('overlapWarn'); if(!el) return;
+  el.style.display=sailsOverlap()?'block':'none';
+}
+
 function renderDayShade(){
   const r=computeDayShade(); S.shadeAnalysis=r;
   const out=document.getElementById('dayShade'); if(!out) return;
@@ -1489,7 +1546,7 @@ function buildEvalRect(){ evalRectGroup.clear(); const Rw=evalRectWorld(); if(!R
 function updateRef(){ refMarker.position.copy(refWorld()); }
 function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); updateOverlapWarning(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
@@ -1559,15 +1616,20 @@ function wireStaticUI(){
   $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();renderDayShade();touch();};
   $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
   $('time').oninput=e=>{S.timeMin=+e.target.value; setTimeInputs(); updateSun(); touch();};
-  $('timeInput').onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
+  const applyTimeInput=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
+  $('timeInput').onchange=applyTimeInput; $('timeInput').oninput=applyTimeInput;
   const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
   const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
   wireEvalRectInputs();
   /* Zeitfenster-Inputs */
   const toTimeStr=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-  const aS=$('analysisStart'); if(aS){ aS.value=toTimeStr(S.analysisStart); aS.onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisStart=h*60+(m||0); renderDayShade(); touch(); } }; }
-  const aE=$('analysisEnd');   if(aE){ aE.value=toTimeStr(S.analysisEnd);   aE.onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisEnd=h*60+(m||0);   renderDayShade(); touch(); } }; }
+  const aS=$('analysisStart'); if(aS){ aS.value=toTimeStr(S.analysisStart);
+    const applyAS=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisStart=h*60+(m||0); renderDayShade(); touch(); } };
+    aS.onchange=applyAS; aS.oninput=applyAS; }
+  const aE=$('analysisEnd');   if(aE){ aE.value=toTimeStr(S.analysisEnd);
+    const applyAE=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisEnd=h*60+(m||0);   renderDayShade(); touch(); } };
+    aE.onchange=applyAE; aE.oninput=applyAE; }
   const bo=$('btnOptimizePosts'); if(bo) bo.onclick=()=>optimizePostAssignment();
   const bs=$('btnOptimizeSails'); if(bs) bs.onclick=()=>optimizeSailPositions();
   const bf=$('btnOptimizeFloat'); if(bf) bf.onclick=()=>optimizeSailPositions();  /* Float-Button: onclick im Modul-Scope verdrahten (HTML-onclick kaputt bei type=module) */
@@ -1609,6 +1671,26 @@ window.addEventListener('keydown',e=>{ if(/INPUT|SELECT|TEXTAREA/.test((e.target
   const k=e.key.toLowerCase();
   if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){ e.preventDefault(); undo(); }
   else if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){ e.preventDefault(); redo(); } });
+
+/* ---- Pfeil hoch/runter für alle .num-Eingabefelder ---- */
+document.addEventListener('keydown',e=>{
+  if(!e.target.classList||!e.target.classList.contains('num')) return;
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown') return;
+  e.preventDefault();
+  const nu=e.target;
+  const row=nu.closest('.row');
+  const sl=row?row.querySelector('input[type="range"]'):null;
+  const step=sl?parseFloat(sl.step)||0.1:0.1;
+  const lo=sl?parseFloat(sl.min):-1e9;
+  const hi=sl?parseFloat(sl.max):1e9;
+  let v=pn(nu.value)+(e.key==='ArrowUp'?step:-step);
+  v=Math.min(hi,Math.max(lo,v));
+  const dec=Math.max(0,(String(step).split('.')[1]||'').length);
+  v=parseFloat(v.toFixed(dec+1));
+  nu.value=fmt(v,2).replace(/,?0+$/,'');
+  nu.dispatchEvent(new Event('input',{bubbles:true}));
+  nu.dispatchEvent(new Event('change',{bubbles:true}));
+});
 
 function buildPointEditors(){
   const host=$('points'); host.innerHTML='';
@@ -1760,7 +1842,7 @@ function onPointerMove(e){ if(!drag) return;
       buildFurniture(); buildLabels(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
 function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
-  if(wasDrag){ renderDayShade(); }
+  if(wasDrag){ renderDayShade(); updateOverlapWarning(); }
   else if(pointerDownPos && e && Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y)<6) handleClick(e);
   pointerDownPos=null;
 }
@@ -1776,6 +1858,7 @@ $('panel').addEventListener('dblclick',e=>{ const el=e.target; if(el.tagName==='
 applyTranslations();
 refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
 </script>
+<div id="toast"></div>
 <button id="btnOptimizeFloat" data-i18n="btn-optimize-sails"
   style="position:fixed;top:12px;right:16px;z-index:200;padding:7px 14px;
          background:#2c6fbb;color:#fff;border:none;border-radius:6px;
