@@ -85,7 +85,6 @@
   @keyframes row-flash{ 0%{background:rgba(244,169,60,.35);box-shadow:0 0 0 2px var(--sun)} 100%{background:transparent;box-shadow:none} }
   .row.highlight{ animation:row-flash 1.2s ease-out forwards;border-radius:6px }
   #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,30,40,.92);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:500;pointer-events:none;max-width:440px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5);display:none;transition:opacity .3s}
-  #overlapWarn{background:rgba(180,30,30,.88);border:1px solid #e74c3c;border-radius:8px;padding:8px 12px;font-size:12px;color:#fff;pointer-events:none;display:none;font-weight:600}
 </style>
 </head>
 <body>
@@ -216,7 +215,6 @@
   <main id="stage"><div id="hud"></div>
     <div id="topleft">
       <div id="dayHud"></div>
-      <div id="overlapWarn" data-i18n="warn-overlap"></div>
       <div id="histHud">
         <button id="undoBtn" data-i18n-title="btn-undo">↩</button>
         <button id="redoBtn" data-i18n-title="btn-redo">↪</button>
@@ -361,8 +359,6 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Bewertet wird der Gesamtschatten als Vereinigung – Flächen, die zwei Segel gleichzeitig beschatten, zählen nur einmal (keine Doppelzählung), Überlappung gilt als Verschwendung. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
-    'opt-overlap': '⛔ Optimierung abgebrochen – Segel würden sich überschneiden. Bisherige Position beibehalten.',
-    'warn-overlap': '⚠️ Segel überschneiden sich!',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -480,8 +476,6 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The objective is the total shadow as a union – areas shaded by two sails at once count only once (no double counting), overlap is treated as waste. The result is only applied if it improves on the current layout.',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
-    'opt-overlap': '⛔ Optimization cancelled – sails would overlap. Kept current layout.',
-    'warn-overlap': '⚠️ Sails overlap!',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -599,8 +593,6 @@ const TRANSLATIONS = {
     'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Оценивается общая тень как объединение – области, затенённые двумя парусами одновременно, считаются один раз (без двойного счёта), перекрытие считается потерей. Результат применяется только если он лучше текущего.',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
-    'opt-overlap': '⛔ Оптимизация отменена – сегели пересеклись бы. Сохранено текущее положение.',
-    'warn-overlap': '⚠️ Сегели пересекаются!',
   }
 };
 
@@ -1223,7 +1215,6 @@ function optimizeSailPositions(){
     if(btn){ btn.disabled=false; }
     if(btn2){ btn2.disabled=false; }
     applyTranslations();
-    updateOverlapWarning();
     if(resultMsg){ showToast(resultMsg, 8000); }
   },16);
 }
@@ -1307,11 +1298,17 @@ function _runSailOptimizer(){
   for(let r=0;r<180;r+=15) rotArr.push(r);
 
   /* ---- Phase 1: ein Segel optimal frei platzieren (Greedy mit Netto-Score + Hill-Climb) ---- */
-  function placeOneSail(s,prevSailPolys){
+  /* prevFootprints: 2D-Fußabdrücke bereits platzierter Segel (XZ-Ebene).
+     Positionen die sich mit diesen überschneiden werden übersprungen. */
+  function placeOneSail(s,prevSailPolys,prevFootprints){
     let best=-1,bx=0,bz=0,br=0,bt=0,found=false;
     for(const cx of cxArr) for(const cz of czArr){
       for(const rot of rotArr){
-        if(!fits(cornersOf(s,cx,cz,rot))) continue;
+        const corners=cornersOf(s,cx,cz,rot);
+        if(!fits(corners)) continue;
+        // Überlappungsausschluss: Segel-Körper darf vorherige Segel-Körper nicht schneiden
+        const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+        if(prevFootprints&&prevFootprints.some(pf=>polysOverlap(fp,pf))) continue;
         for(const slope of tiltArr){
           const sc=scoreSailAt(s,cx,cz,rot,slope,prevSailPolys);
           if(sc>best){ best=sc;bx=cx;bz=cz;br=rot;bt=slope;found=true; } } } }
@@ -1321,7 +1318,10 @@ function _runSailOptimizer(){
       let improved=false;
       const cand=[[bx+step,bz,br],[bx-step,bz,br],[bx,bz+step,br],[bx,bz-step,br],[bx,bz,br+7],[bx,bz,br-7]];
       for(const [cx,cz,rr0] of cand){ const rr=((rr0%180)+180)%180;
-        if(!fits(cornersOf(s,cx,cz,rr))) continue;
+        const corners=cornersOf(s,cx,cz,rr);
+        if(!fits(corners)) continue;
+        const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+        if(prevFootprints&&prevFootprints.some(pf=>polysOverlap(fp,pf))) continue;
         for(const slope of tiltArr){ const sc=scoreSailAt(s,cx,cz,rr,slope,prevSailPolys);
           if(sc>best){ best=sc;bx=cx;bz=cz;br=rr;bt=slope;improved=true; } } }
       if(!improved) step/=2;
@@ -1332,14 +1332,16 @@ function _runSailOptimizer(){
   /* Greedy-Durchlauf in gegebener Segel-Reihenfolge -> Platzierungen + Gesamtscore */
   function greedyRun(order){
     const placements=new Array(activeSails.length).fill(null);
-    let prevSailPolys=null, total=0, ok=true;
+    let prevSailPolys=null, prevFootprints=[], total=0, ok=true;
     for(const ai of order){ const {s}=activeSails[ai];
-      const pl=placeOneSail(s,prevSailPolys);
+      const pl=placeOneSail(s,prevSailPolys,prevFootprints);
       if(!pl){ ok=false; break; }
       placements[ai]=pl; total+=pl.score;
       const polys=sunDirs.map(({dir})=>groundPolyWithTilt(s,pl.cx,pl.cz,pl.rot,pl.slope,dir));
       if(!prevSailPolys) prevSailPolys=sunDirs.map(()=>[]);
       prevSailPolys=prevSailPolys.map((arr,ti)=>arr.concat([polys[ti]]));
+      // Fußabdruck des gerade platzierten Segels für nächste Segel merken
+      prevFootprints.push(cornersOf(s,pl.cx,pl.cz,pl.rot).map(c=>({x:c.wx,z:c.wz})));
     }
     return {placements,total,ok};
   }
@@ -1450,14 +1452,6 @@ function _runSailOptimizer(){
     }
   })();
 
-  /* ---- Überlappungsschutz: Segel dürfen sich nicht schneiden ---- */
-  if(sailsOverlap()){
-    S.points=beforeSnap.points;
-    beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
-    buildPointEditors(); buildSailEditors(); updateAll(); touch();
-    return t('opt-overlap');
-  }
-
   /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung uebernehmen ---- */
   const afterKPI=kpiNow();
   let key='opt-improved';
@@ -1478,35 +1472,26 @@ function showToast(msg,ms=7000){
   showToast._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; },300); },ms);
 }
 
-/* ---- Segel-Überlappungsprüfung (Separating Axis Theorem, XZ-Ebene) ---- */
+/* ---- Segel-Fußabdruck-Überlappung (SAT, normalisierte Achsen, ε=2cm) ---- */
+/* Wird NUR im Optimierer verwendet – verhindert dass Kandidatenpositionen
+   geprüft werden, bei denen sich Segel-Körper überschneiden würden.
+   ε=0.02m: Float-Artefakt bei gemeinsamen Polen (Segel die sich berühren)
+   werden NICHT als überlappend gewertet. */
 function polysOverlap(A,B){
+  const EPS=0.02; // 2cm: sails may touch, but not truly cross
   for(const poly of [A,B]){
     for(let i=0;i<poly.length;i++){
       const a=poly[i],b=poly[(i+1)%poly.length];
       const nx=-(b.z-a.z),nz=b.x-a.x;
+      const len=Math.hypot(nx,nz); if(len<1e-9) continue;
+      const ux=nx/len,uz=nz/len; // normalisiert → Projektion in Metern
       let minA=Infinity,maxA=-Infinity,minB=Infinity,maxB=-Infinity;
-      for(const p of A){ const d=p.x*nx+p.z*nz; if(d<minA)minA=d; if(d>maxA)maxA=d; }
-      for(const p of B){ const d=p.x*nx+p.z*nz; if(d<minB)minB=d; if(d>maxB)maxB=d; }
-      if(maxA<=minB||maxB<=minA) return false;
+      for(const p of A){ const d=p.x*ux+p.z*uz; if(d<minA)minA=d; if(d>maxA)maxA=d; }
+      for(const p of B){ const d=p.x*ux+p.z*uz; if(d<minB)minB=d; if(d>maxB)maxB=d; }
+      if(maxA<=minB+EPS||maxB<=minA+EPS) return false; // getrennt (inkl. Berührung)
     }
   }
-  return true;
-}
-function sailFootprint2D(s){ try{ return sailCorners(s).map(v=>({x:v.x,z:v.z})); }catch(e){ return []; } }
-function sailsOverlap(){
-  const active=S.sails.map((s,i)=>({s,i})).filter(({s})=>s.on);
-  for(let a=0;a<active.length;a++){
-    const fpA=sailFootprint2D(active[a].s); if(fpA.length<3) continue;
-    for(let b=a+1;b<active.length;b++){
-      const fpB=sailFootprint2D(active[b].s); if(fpB.length<3) continue;
-      if(polysOverlap(fpA,fpB)) return true;
-    }
-  }
-  return false;
-}
-function updateOverlapWarning(){
-  const el=document.getElementById('overlapWarn'); if(!el) return;
-  el.style.display=sailsOverlap()?'block':'none';
+  return true; // echte Überlappung > 2cm
 }
 
 function renderDayShade(){
@@ -1546,7 +1531,7 @@ function buildEvalRect(){ evalRectGroup.clear(); const Rw=evalRectWorld(); if(!R
 function updateRef(){ refMarker.position.copy(refWorld()); }
 function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
 function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
-function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); updateOverlapWarning(); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); }
 
 /* ---- Persistenz ---- */
 let saveTimer=null;
@@ -1842,7 +1827,7 @@ function onPointerMove(e){ if(!drag) return;
       buildFurniture(); buildLabels(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
 }
 function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
-  if(wasDrag){ renderDayShade(); updateOverlapWarning(); }
+  if(wasDrag){ renderDayShade(); }
   else if(pointerDownPos && e && Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y)<6) handleClick(e);
   pointerDownPos=null;
 }
