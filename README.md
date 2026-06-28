@@ -10,7 +10,7 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://nomiknomik.github.io/shade-sail-simulator/)
 [![No Install](https://img.shields.io/badge/No%20Install-open%20index.html-brightgreen?style=for-the-badge)](#quick-start)
 [![Three.js 0.160](https://img.shields.io/badge/Three.js-0.160-black?style=for-the-badge&logo=threedotjs)](https://threejs.org)
-[![Version](https://img.shields.io/badge/Version-3.9-orange?style=for-the-badge)](#changelog)
+[![Version](https://img.shields.io/badge/Version-5.8-orange?style=for-the-badge)](#changelog)
 
 </div>
 
@@ -56,6 +56,11 @@ Visualizes shadow casting, sail orientation, and furniture shading at any time o
 | 🎬 **Time animation** | Play shadow movement across 24 hours |
 | 🌍 **Multilingual** | DE / EN / RU — switchable at runtime |
 | 💾 **Auto-save** | localStorage + JSON export/import |
+| 🎯 **Sail optimizer** | Auto-places sails for maximum shadow on seating area (sun-tilt, raster + hill-climb, two-phase) |
+| 📐 **Evaluation rectangle** | Draw a custom seating zone; optimizer and analysis target it |
+| 📊 **Union shadow analysis** | Overlapping sail areas counted only once; overlap waste shown as warning |
+| 🔀 **Diversification optimizer** | Top-K best Sail-1 positions × best Sail-2 per Sail-1 for true joint coverage |
+| ↩️ **Undo / Redo** | 40-step history ring buffer |
 
 ---
 
@@ -152,9 +157,12 @@ The root coordinate system is relative to the user-defined reference point — m
 
 ```
 shade-sail-simulator/
-├── index.html         ← complete app (~1100 lines)
+├── index.html         ← complete app (~1716 lines)
 ├── README.md          ← this file
 ├── DEVELOPER.md       ← technical reference for contributors
+├── CLAUDE.md          ← AI context for Claude Code
+├── ToDo.md            ← change-request queue
+├── JSON/              ← saved garden setups (JSON export/import)
 └── screenshots/       ← app screenshots (see SCREENSHOTS.md)
 ```
 
@@ -202,6 +210,12 @@ Sail 2:   (disabled)
 
 | Version | Changes |
 |---------|---------|
+| **5.8** | Diversification optimizer: Top-K best Sail-1 positions × best Sail-2 per Sail-1, maximises joint coverage; free-posts mode (optimizer doesn't force posts to garden wall) |
+| 5.3 | Union-based shadow analysis — overlapping areas counted only once; overlap waste (m²·h) highlighted as warning |
+| 5.2 | Coarse-to-fine KPI refinement (`polishKPI`) after optimizer: 0.30 → 0.15 → 0.05 m hill-climb on real KPI for sub-grid precision |
+| 5.1 | Two-phase sail optimizer — Phase 1: free raster search + sun-tilt + hill-climb; Phase 2: auto-place posts on garden walls; regression guard |
+| 5.0 | Post-assignment optimizer (brute-force best corner mapping); undo/redo (41-step ring buffer); configurable evaluation rectangle (draw seating area) |
+| 4.x | Sail tilt toward sun direction; dimension/position arrows; post-label toggle |
 | **3.9** | Person figure (draggable, adjustable height); click-to-scroll (click 3D element → panel scrolls to settings); comma decimal separator for all numeric inputs; highlight animation on scrolled card |
 | 3.8 | Multilingual UI: DE / EN / RU; enlarged 3D labels (13px / 96px); shadow area clipped to garden boundary (Sutherland-Hodgman); persistent daily analysis HUD overlay |
 | 3.6 | 4 individually adjustable wall heights; pivot-corner rotation for furniture; location selector (6 cities); daily shade analysis (10–18h, m²·h) |

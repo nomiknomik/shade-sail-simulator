@@ -4,7 +4,7 @@ Technical reference for contributors and future development.
 
 ## Architecture
 
-Single-file web application (`index.html`, ~700 lines). No build tools, no package manager, no server required.
+Single-file web application (`index.html`, ~1716 lines). No build tools, no package manager, no server required.
 
 ```
 index.html
@@ -36,19 +36,21 @@ All application state lives in the `S` object, persisted to `localStorage` under
 
 ```javascript
 S = {
-  garden:  { w, d, wallH, north },       // meters, degrees
-  loc:     { lat, lon },                  // decimal degrees
+  garden:  { w, d, walls: { x0, xb, y0, yt }, wallOpacity, north }, // meters, degrees
+  loc:     { lat, lon },                    // decimal degrees
   dateStr: "YYYY-MM-DD",
-  timeMin: 0–1439,                        // minutes since midnight
-  showLabels: boolean,
-  ref:     { corner: 0–3, ox, oy, oz },  // reference point
-  points:  [ { x, y, h } × 6 ],          // post positions (m), relative to ref
+  timeMin: 0–1439,                          // minutes since midnight
+  showPostLabels: boolean,                  // 3D post label visibility
+  showDims:       boolean,                  // dimension / position arrows
+  ref:     { corner: 0–3, ox, oy, oz },    // reference point
+  points:  [ { x, y, h } × 6 ],            // post positions (m), relative to ref
   sails:   [ {
-    on, shape,                            // 3 or 4 corners
-    a, b, c,                              // triangle sides (m)
-    bw, bl,                               // rectangle width/length (m)
-    dx, dz,                               // mouse drag offset (m)
-    posts: [0–5 × shape],                 // post index per corner
+    on, shape: 3|4,                         // active flag, triangle or rectangle
+    a, b, c,                                // triangle sides (m)
+    bw, bl,                                 // rectangle width/length (m)
+    dx, dz,                                 // sail-center offset from post centroid (m)
+    rot,                                    // rotation angle (degrees)
+    posts: [i, j, k] | [i, j, k, l],       // post index per corner
     color, opacity
   } × 2 ],
   furniture: {
@@ -56,9 +58,21 @@ S = {
     chair1:  { on, x, y, yaw },
     chair2:  { on, x, y, yaw },
     pergola: { on, x, y, yaw, pw, pl, ph },
-  }
+  },
+  person:   { on, x, y, h },               // draggable person figure
+  evalRect: { on, x0, y0, x1, y1 },        // evaluation rectangle (seating zone)
+  shadeAnalysis: {                          // last computed daily analysis
+    window, date, stepMin,
+    perSail: [...],                         // per-sail m²·h
+    total_m2h,                              // union total
+    total_rect_m2h,                         // union inside evalRect
+    overlap_m2h                             // double-covered area (waste)
+  },
+  _pivotCorner: true                        // migration flag
 }
 ```
+
+> **⚠️ Coordinate note:** `S.points[i].y` maps to Three.js **Z** axis (depth), not Y (height). Use `poleTop(i)` to get world position.
 
 ## Coordinate System
 
@@ -119,12 +133,42 @@ The `migrate()` function handles upgrading old saved states to the current schem
 
 | Group | Contents |
 |---|---|
-| `polesGroup` | Post cylinders + knobs |
+| `polesGroup` | Post cylinders + knobs (only posts referenced by active sails) |
 | `ropesGroup` | Rope lines (corner → post) |
 | `furnGroup` | Table, chairs, pergola meshes |
 | `shadowGroup` | Ground shadow polygon + outline |
-| `labelsGroup` | Sprite labels (shown when `showLabels` is true) |
+| `labelsGroup` | Sprite labels + dimension arrows |
+| `evalGroup` | Yellow evaluation rectangle mesh |
+| `dayShadeGroup` | Daily shade analysis visualization |
 | `sailMeshes[0/1]` | The two sail meshes (added directly to scene) |
+
+## Optimizer Architecture (v5.x)
+
+### Two-phase sail optimizer (`_runSailOptimizer`)
+
+**Phase 1 — Free placement:**
+- Coarse raster (NX=NY=18, ~0.53 m steps) over garden area
+- 15° rotation increments
+- Sun-tilt: sail inclined toward mean sun direction (10–18h, `tiltPlane`)
+- Hill-climb refinement on best candidate
+- Both sail orderings tried; best joint score wins
+
+**Phase 2 — Auto-post placement:**
+- Each sail corner projected radially to garden wall (`toWall`)
+- Nearby corners clustered (shared posts; no two corners of same sail share a post)
+- `S.points` filled to 6
+
+**Regression guard:** real KPI (`computeDayShade`) measured before/after; reverted if no improvement.
+
+**Coarse-to-fine polish (`polishKPI`, v5.2):** after main optimizer, 0.30 → 0.15 → 0.05 m hill-climb on dx/dz of each sail using real KPI. Closes the gap between internal search grid and reported precision.
+
+**Diversification (v5.8):** Top-K best Sail-1 positions are kept; for each, best Sail-2 is found independently. Best (S1, S2) pair by joint KPI wins.
+
+### Union shadow (`computeDayShade`, v5.3)
+
+Every garden grid cell is counted at most once across all sails per time step. `perSail[]` retains per-sail values; `total_m2h` = union. `overlap_m2h` = Σ(perSail) − union = wasted double coverage.
+
+---
 
 ## Planned Features
 
@@ -132,6 +176,6 @@ See [README.md](README.md#planned-features) for the user-facing roadmap.
 
 Technical notes on planned work:
 
-- **Sun hours analysis**: iterate over `timeMin` in steps, call `updateShadow()` logic without rendering, accumulate shaded minutes per furniture probe point.
 - **Post drag**: add post meshes to hit-test list in `onPointerDown`; update `S.points[i].x/y` on move.
 - **Triangle validation**: check `a + b > c` etc. before `sailLocalCorners()`; show warning in UI.
+- **Rope slack warning**: compare rope length vs. post spacing; flag when slack exceeds threshold.

@@ -23,14 +23,18 @@ Die Datei `ToDo.md` ist die zentrale Sammelliste für Änderungswünsche von Ale
 So gehen keine Wünsche verloren und die Liste bleibt nach jeder Runde sauber.
 
 ## Architecture
-Everything lives in `index.html` (≈1100 lines). Key sections:
-- `defaultState()` – all garden/sail/furniture state (localStorage key: `sonnensegel-v7`)
-- `TRANSLATIONS` object – DE/EN/RU i18n
+Everything lives in `index.html` (≈1716 lines). Key sections:
+- `defaultState()` – all garden/sail/furniture/person/evalRect state (localStorage key: `sonnensegel-v7`)
+- `TRANSLATIONS` object – DE/EN/RU i18n (~240 keys)
 - `pn()` helper – parses numbers (accepts comma as decimal separator)
 - `clipPolyToGarden()` – Sutherland-Hodgman polygon clipping for shadow area
+- `computeDayShade()` – union-based daily shadow analysis (10–18h, no double-counting)
+- `_runSailOptimizer()` – two-phase optimizer: free placement + auto-post-to-wall + Top-K diversification
 - Sail surface: bilinear/hyperbolic paraboloid model (4-post interpolation)
 - Sun position: SunCalc library → directional Three.js light
-- `updateFromState()` – rebuilds all 3D objects from state
+- `updateAll()` – rebuilds all 3D objects from state
+
+→ For full function map and state shape see [DEVELOPER.md](DEVELOPER.md)
 
 ## Key Design Decisions
 - **No build step** – must stay as single file deployable via GitHub Pages
@@ -54,7 +58,7 @@ SHA=$(curl -s -H "Authorization: token TOKEN" \
 Commit messages in English: `feat:`, `fix:`, `docs:`, `chore:`
 
 ## Planned Features (backlog)
-- Sun-hours analysis per seating position
 - Mouse-dragging of posts (currently only sails draggable)
-- Triangle validity warnings
-- Warnings for excessive rope residual lengths
+- Triangle validity warnings (a+b > c check)
+- Warnings for excessive rope slack
+- Additional furniture / obstacles
