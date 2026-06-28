@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator v6.0 — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v6.1 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -92,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 6.0 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Alter bidirektionaler Greedy + Top-K konkurrieren, KPI-Bester gewinnt (nie schlechter als alt) · Feinschliff auf echter KPI · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
+      <div class="ver">Version 6.1 · DE/EN/RU · Pergola bis 15 m + vertikaler Sonnenschutz an allen 4 Seiten · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Alter bidirektionaler Greedy + Top-K konkurrieren, KPI-Bester gewinnt (nie schlechter als alt) · Feinschliff auf echter KPI · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -329,6 +329,11 @@ const TRANSLATIONS = {
     'furn-chair1': 'Stuhl 1',
     'furn-chair2': 'Stuhl 2',
     'furn-pergola': 'Pergola',
+    'perg-sides': 'Vertikaler Sonnenschutz (Seiten)',
+    'perg-front': 'Vorne',
+    'perg-back': 'Hinten',
+    'perg-left': 'Links',
+    'perg-right': 'Rechts',
     'shadow-night': 'Nachts kein Schatten.',
     'shadow-none': 'Keine Segel aktiv.',
     'shadow-sail': 'Segel',
@@ -447,6 +452,11 @@ const TRANSLATIONS = {
     'furn-chair1': 'Chair 1',
     'furn-chair2': 'Chair 2',
     'furn-pergola': 'Pergola',
+    'perg-sides': 'Vertical sun protection (sides)',
+    'perg-front': 'Front',
+    'perg-back': 'Back',
+    'perg-left': 'Left',
+    'perg-right': 'Right',
     'shadow-night': 'No shadow at night.',
     'shadow-none': 'No sails active.',
     'shadow-sail': 'Sail',
@@ -565,6 +575,11 @@ const TRANSLATIONS = {
     'furn-chair1': 'Стул 1',
     'furn-chair2': 'Стул 2',
     'furn-pergola': 'Пергола',
+    'perg-sides': 'Вертикальная защита от солнца (стороны)',
+    'perg-front': 'Перед',
+    'perg-back': 'Зад',
+    'perg-left': 'Лево',
+    'perg-right': 'Право',
     'shadow-night': 'Ночью тени нет.',
     'shadow-none': 'Нет активных парусов.',
     'shadow-sail': 'Парус',
@@ -663,7 +678,7 @@ function defaultState(){
       table:  { on:true, x:-2.479421015118292,    y:-4.848058999767439,    yaw:0,   tw:0.9, tl:1.58, th:0.74 },
       chair1: { on:true, x:-2.9305071385166768,   y:-3.6133698799620877,   yaw:90  },
       chair2: { on:true, x:-1.7993745567905344,   y:-3.606782007046153,    yaw:-90 },
-      pergola:{ on:true, x:-8.2,                  y:-3.7,                  yaw:0,   pw:2.9, pl:2.9, ph:2.4 },
+      pergola:{ on:true, x:-8.2,                  y:-3.7,                  yaw:0,   pw:2.9, pl:2.9, ph:2.4, sides:{front:false,back:false,left:false,right:false} },
     },
     person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
     evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
@@ -701,6 +716,7 @@ function migrate(st){
   st.sails.forEach(s=>{ if(typeof s.rot!=='number'||isNaN(s.rot)) s.rot=0; });
   st.furniture=Object.assign({},d.furniture,st.furniture||{});
   ['table','chair1','chair2','pergola'].forEach(k=>{ st.furniture[k]=Object.assign({},d.furniture[k],st.furniture[k]||{}); });
+  { const pg=st.furniture.pergola; if(pg) pg.sides=Object.assign({},d.furniture.pergola.sides,pg.sides||{}); }
   if(!st._pivotCorner){
     const tab=st.furniture.table, pg=st.furniture.pergola;
     if(tab){ tab.x-=(tab.tw||1.1)/2; tab.y-=(tab.tl||0.7)/2; }
@@ -872,6 +888,13 @@ function makePergola(f){ const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const g=new T
   const roof=new THREE.Mesh(new THREE.BoxGeometry(pw,0.08,pl),mat); roof.position.set(ox,ph,oz); roof.castShadow=true; roof.receiveShadow=true; g.add(roof);
   const lx=Math.max(0.06,pw/2-0.08),lz=Math.max(0.06,pl/2-0.08);
   [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,ph,0.08),mat);leg.position.set(ox+x,ph/2,oz+z);leg.castShadow=true;g.add(leg);});
+  /* Vertikaler Sonnenschutz an den vier Seiten (optional) */
+  const sd=f.sides||{}; const fabric=new THREE.MeshStandardMaterial({color:0xc9bfa6,roughness:0.9,metalness:0.0,transparent:true,opacity:0.6,side:THREE.DoubleSide});
+  const addPanel=(width,px,pz,rotY)=>{ const pane=new THREE.Mesh(new THREE.PlaneGeometry(width,ph),fabric); pane.position.set(px,ph/2,pz); pane.rotation.y=rotY; pane.castShadow=true; g.add(pane); };
+  if(sd.front) addPanel(pw,ox,0,0);
+  if(sd.back)  addPanel(pw,ox,pl,0);
+  if(sd.left)  addPanel(pl,0,oz,Math.PI/2);
+  if(sd.right) addPanel(pl,pw,oz,Math.PI/2);
   g.userData.shadeMesh=roof; return g; }
 function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld();
   [['table',makeTable],['chair1',makeChair],['chair2',makeChair],['pergola',makePergola]].forEach(([key,maker])=>{ const f=S.furniture[key]; if(!f||!f.on) return;
@@ -1101,6 +1124,19 @@ function pergolaGroundShadow(dir){ const f=S.furniture.pergola; if(!f||!f.on||di
   const ccx=B.x+f.x + ox*ca - oz*sa, ccz=B.z+f.y + ox*sa + oz*ca;
   return [[-pw/2,-pl/2],[pw/2,-pl/2],[pw/2,pl/2],[-pw/2,pl/2]].map(([lx,lz])=>{
     const wx=ccx+lx*ca-lz*sa, wz=ccz+lx*sa+lz*ca; return projToGround(new THREE.Vector3(wx,ph,wz),dir); }); }
+/* Bodenschatten der vertikalen Pergola-Seitenpanels (je aktives Panel ein Quad) */
+function pergolaSideShadows(dir){ const f=S.furniture.pergola; if(!f||!f.on||dir.y<=0.02) return [];
+  const sd=f.sides||{}; if(!(sd.front||sd.back||sd.left||sd.right)) return [];
+  const B=refWorld(); const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const yr=(f.yaw||0)*DEG,ca=Math.cos(yr),sa=Math.sin(yr);
+  const ox=B.x+f.x, oz=B.z+f.y;
+  const W=(lx,lz)=>({x:ox+lx*ca-lz*sa, z:oz+lx*sa+lz*ca}); /* Bodenpunkt (y=0) */
+  const polys=[]; const add=(a,b)=>{ const top=p=>projToGround(new THREE.Vector3(p.x,ph,p.z),dir);
+    polys.push([ {x:a.x,z:a.z}, {x:b.x,z:b.z}, top(b), top(a) ]); };
+  if(sd.front) add(W(0,0), W(pw,0));
+  if(sd.back)  add(W(0,pl),W(pw,pl));
+  if(sd.left)  add(W(0,0), W(0,pl));
+  if(sd.right) add(W(pw,0),W(pw,pl));
+  return polys; }
 /* Bodenschatten der Wände (je Wand ein Quad zwischen Basislinie und projizierter Oberkante) */
 function wallGroundShadows(dir){ if(dir.y<=0.02) return []; const {w,d}=S.garden,W=S.garden.walls; const hw=w/2,hd=d/2; const polys=[];
   const add=(b1,b2,h)=>{ if(!(h>0.01)) return; polys.push([ {x:b1[0],z:b1[1]}, {x:b2[0],z:b2[1]},
@@ -1130,7 +1166,7 @@ function computeDayShade(){
       cells.push({x:cx,z:cz,inRect}); } }
   for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1;
     if(!(alt>0&&dir.y>0.02)) continue;
-    const blockers=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) blockers.push(pg);
+    const blockers=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) blockers.push(pg); blockers.push(...pergolaSideShadows(dir));
     const sailPolys=activeIdx.map(i=>sailGroundPoly(S.sails[i],dir));
     for(const c of cells){
       let blocked=false; for(const bp of blockers){ if(pointInPoly(c,bp)){ blocked=true; break; } }
@@ -1248,7 +1284,7 @@ function _runSailOptimizer(){
   const tlen=Math.hypot(sunSumX,sunSumZ); const tdx=tlen>1e-6?sunSumX/tlen:0, tdz=tlen>1e-6?sunSumZ/tlen:1;
 
   /* ---- KPI-konsistente statische Schatten je Zeitschritt: Wand + Pergola ---- */
-  const blockersPerStep=sunDirs.map(({dir})=>{ const b=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) b.push(pg); return b; });
+  const blockersPerStep=sunDirs.map(({dir})=>{ const b=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) b.push(pg); b.push(...pergolaSideShadows(dir)); return b; });
 
   /* ---- Bewertungszellen: NUR Sitzflaeche (Auswertungsrechteck), sonst ganzer Garten ---- */
   const NX=18,NY=18; const cellA=(w/NX)*(d/NY);
@@ -1813,14 +1849,24 @@ function buildFurnitureEditors(){
     const f=S.furniture[key]; if(!f) return; const D=DEF.furniture[key]; const card=document.createElement('div'); card.className='card'; card.dataset.fkey=key;
     let sizeHtml='';
     if(key==='table') sizeHtml=rowHTML(t('lbl-bw'),'tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML(t('lbl-bl'),'tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML(t('lbl-height'),'th',0.4,1.1,0.01,f.th,'m',D.th);
-    if(key==='pergola') sizeHtml=rowHTML(t('lbl-bw'),'pw',1,6,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,6,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-height'),'ph',1.8,3,0.05,f.ph,'m',D.ph);
+    if(key==='pergola') sizeHtml=rowHTML(t('lbl-bw'),'pw',1,15,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,15,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-height'),'ph',1.8,3,0.05,f.ph,'m',D.ph);
+    let extraHtml='';
+    if(key==='pergola'){ const sd=f.sides||{}; extraHtml=`<div style="margin-top:6px;font-size:11px;color:var(--muted)">${t('perg-sides')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;margin-top:2px">
+        <label><input type="checkbox" class="sd-front" ${sd.front?'checked':''}> ${t('perg-front')}</label>
+        <label><input type="checkbox" class="sd-back" ${sd.back?'checked':''}> ${t('perg-back')}</label>
+        <label><input type="checkbox" class="sd-left" ${sd.left?'checked':''}> ${t('perg-left')}</label>
+        <label><input type="checkbox" class="sd-right" ${sd.right?'checked':''}> ${t('perg-right')}</label>
+      </div>`; }
     card.innerHTML=`<h3>${labels[key]}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${f.on?'checked':''}> ${t('lbl-visible')}</label></h3>
-      ${rowHTML(t('lbl-x'),'fx',-15,15,0.1,f.x,'m',D.x)}${rowHTML(t('lbl-y'),'fy',-15,15,0.1,f.y,'m',D.y)}${rowHTML(t('lbl-yaw'),'fyaw',-180,180,1,f.yaw,'°',D.yaw)}${sizeHtml}`;
+      ${rowHTML(t('lbl-x'),'fx',-15,15,0.1,f.x,'m',D.x)}${rowHTML(t('lbl-y'),'fy',-15,15,0.1,f.y,'m',D.y)}${rowHTML(t('lbl-yaw'),'fyaw',-180,180,1,f.yaw,'°',D.yaw)}${sizeHtml}${extraHtml}`;
     const q=s=>card.querySelector(s);
     q('.on').onchange=e=>{f.on=e.target.checked; buildFurniture(); updateSun(); touch();};
     link(card,'fx',-15,15,v=>{f.x=v;buildFurniture();updateSun();}); link(card,'fy',-15,15,v=>{f.y=v;buildFurniture();updateSun();}); link(card,'fyaw',-180,180,v=>{f.yaw=v;buildFurniture();});
     if(key==='table'){ link(card,'tw',0.5,3,v=>{f.tw=v;buildFurniture();updateSun();}); link(card,'tl',0.5,3,v=>{f.tl=v;buildFurniture();updateSun();}); link(card,'th',0.4,1.1,v=>{f.th=v;buildFurniture();updateSun();}); }
-    if(key==='pergola'){ link(card,'pw',1,6,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,6,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();}); }
+    if(key==='pergola'){ link(card,'pw',1,15,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,15,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();});
+      f.sides=f.sides||{front:false,back:false,left:false,right:false};
+      [['sd-front','front'],['sd-back','back'],['sd-left','left'],['sd-right','right']].forEach(([cls,k])=>{ const cb=q('.'+cls); if(cb) cb.onchange=e=>{f.sides[k]=e.target.checked;buildFurniture();updateSun();touch();}; }); }
     host.appendChild(card);
   });
 }
