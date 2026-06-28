@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator v5.7 — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v5.8 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -92,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.7 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Konfigurierbares Auswertungsfenster · Überlappungsschutz für Segel · Pfeil-hoch/runter in Eingabefeldern · Top-K Kombinationsoptimierung (5×5 Paare)</div>
+      <div class="ver">Version 5.8 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Feinschliff auf echter KPI · Diversifizierungs-Optimizer (Top-K S1 × bestes S2 je S1) · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -164,6 +164,9 @@
       <div style="margin-top:6px">
         <button class="btn" id="btnOptimizeSails" style="width:100%" data-i18n="btn-optimize-sails"></button>
       </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.85em;cursor:pointer">
+        <input type="checkbox" id="chkFreePosts"> <span data-i18n="lbl-free-posts"></span>
+      </label>
       <p class="hint" data-i18n="hint-optimize-sails"></p>
     </div>
 
@@ -357,6 +360,7 @@ const TRANSLATIONS = {
     'lbl-person-h': 'Körpergröße',
     'btn-optimize-sails': '🎯 Ideale Segel-Position berechnen',
     'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Bewertet wird der Gesamtschatten als Vereinigung – Flächen, die zwei Segel gleichzeitig beschatten, zählen nur einmal (keine Doppelzählung), Überlappung gilt als Verschwendung. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
+    'lbl-free-posts': 'Pfosten frei platzieren',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
   },
@@ -474,6 +478,7 @@ const TRANSLATIONS = {
     'lbl-person-h': 'Height',
     'btn-optimize-sails': '🎯 Calculate ideal sail position',
     'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The objective is the total shadow as a union – areas shaded by two sails at once count only once (no double counting), overlap is treated as waste. The result is only applied if it improves on the current layout.',
+    'lbl-free-posts': 'Place posts freely',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
   },
@@ -591,6 +596,7 @@ const TRANSLATIONS = {
     'lbl-person-h': 'Рост',
     'btn-optimize-sails': '🎯 Вычислить идеальное положение парусов',
     'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Оценивается общая тень как объединение – области, затенённые двумя парусами одновременно, считаются один раз (без двойного счёта), перекрытие считается потерей. Результат применяется только если он лучше текущего.',
+    'lbl-free-posts': 'Свободное размещение стоек',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
   }
@@ -662,6 +668,7 @@ function defaultState(){
     person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
     evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
     analysisStart:660, analysisEnd:900,  /* Auswertungsfenster: 660=11:00, 900=15:00 */
+    optimizer_freePosts:false,           /* Pfosten-Modus: false=Wand (Standard), true=frei */
   };
 }
 
@@ -708,6 +715,7 @@ function migrate(st){
   if(typeof st.analysisStart!=='number'||st.analysisStart<0||st.analysisStart>1380) st.analysisStart=660;
   if(typeof st.analysisEnd!=='number'||st.analysisEnd<60||st.analysisEnd>1440) st.analysisEnd=900;
   if(st.analysisEnd<=st.analysisStart) st.analysisEnd=st.analysisStart+60;
+  if(typeof st.optimizer_freePosts!=='boolean') st.optimizer_freePosts=false;
   return st;
 }
 
@@ -1366,40 +1374,42 @@ function _runSailOptimizer(){
     return {placements,total,ok};
   }
 
-  /* --- Top-K Kombinations-Suche (Aufgabe C): fuer 2 aktive Segel alle K×K Paare auswerten ---
-     Fuer 1 Segel: Greedy wie bisher (kein Vorteil durch Enumeration) */
+  /* --- Top-K Diversifizierungs-Optimizer v5.8: K beste S1-Positionen × bestes S2 je S1 ---
+     Phase-D-Erkenntnis: independente Top-K beider Segel überlappen immer (gleiche Zielzone).
+     Lösung: S1 → Top-K (solo), für jede S1-Position → placeOneSail(S2, prev=S1).
+     S2 muss ERZWUNGEN eine andere Zone finden → echte komplementäre Abdeckung.
+     Kosten: K × placeOneSail(S2) → K-fach besser als reiner Greedy. */
   const TOP_K=5;
   let runResult;
   if(activeSails.length===2){
     const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
-    const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
     let bestCombo=null, bestComboScore=-1;
     for(const p0 of topK0){
-      const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
       const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
-      for(const p1 of topK1){
-        const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
-        if(polysOverlap(fp0,fp1)) continue;
-        /* Heuristik: Zentren < 0.8m auseinander überspringen */
-        if(Math.hypot(p0.cx-p1.cx,p0.cz-p1.cz)<0.8) continue;
-        const addScore=scoreSailAt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,[polys0]);
-        const combo=p0.score+addScore;
-        if(combo>bestComboScore){ bestComboScore=combo; bestCombo=[p0,p1]; }
+      const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
+      /* prevSailPolys[ti]=[S1-Schatten@ti] → placeOneSail sucht Zone ohne S1-Überlappung */
+      const prevPolys0=sunDirs.map((_,ti)=>[polys0[ti]]);
+      const pl1=placeOneSail(activeSails[1].s,prevPolys0,[fp0]);
+      if(!pl1) continue;
+      const combo=p0.score+pl1.score;
+      if(combo>bestComboScore){
+        bestComboScore=combo;
+        bestCombo=[
+          {cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope,score:p0.score},
+          {cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope,score:pl1.score}
+        ];
       }
     }
     if(bestCombo){
-      /* Gefundenes Paar als placements-Struktur verpacken, damit Phase 2 unverändert bleibt */
       runResult={ ok:true, total:bestComboScore,
         placements:[
           {cx:bestCombo[0].cx,cz:bestCombo[0].cz,rot:bestCombo[0].rot,slope:bestCombo[0].slope,score:bestCombo[0].score},
           {cx:bestCombo[1].cx,cz:bestCombo[1].cz,rot:bestCombo[1].rot,slope:bestCombo[1].slope,score:bestCombo[1].score}
         ]};
     } else {
-      /* Fallback: Greedy (sollte nie passieren) */
       runResult=greedyRun(activeSails.map((_,i)=>i));
     }
   } else {
-    /* 1 Segel: Greedy wie bisher */
     runResult=greedyRun(activeSails.map((_,i)=>i));
   }
   if(!runResult.ok){
@@ -1421,10 +1431,14 @@ function _runSailOptimizer(){
     if(uz>1e-6) tBest=Math.min(tBest,(hd-cz)/uz); else if(uz<-1e-6) tBest=Math.min(tBest,(-hd-cz)/uz);
     if(!isFinite(tBest)) tBest=L;
     return { wx:cx+ux*tBest, wz:cz+uz*tBest }; }
-  /* Roh-Pfosten je Segelecke (Soll-Hoehe aus der Kipp-Ebene am Pfostenfuss) */
+  /* Roh-Pfosten je Segelecke (Soll-Hoehe aus der Kipp-Ebene am Pfostenfuss)
+     optimizer_freePosts=true → Pfosten direkt an Segel-Ecke (kein toWall) */
   const rawPosts=[];
   for(const res of results){ res.rawIdx=[];
-    for(const c of res.corners){ const wp=toWall(res.cx,res.cz,c.wx,c.wz);
+    for(const c of res.corners){
+      const wp=S.optimizer_freePosts
+        ? {wx:c.wx,wz:c.wz}
+        : toWall(res.cx,res.cz,c.wx,c.wz);
       const h=Math.max(H_MIN,Math.min(H_MAX,tiltPlane(wp.wx,wp.wz,res.cx,res.cz,res.slope)));
       rawPosts.push({wx:wp.wx,wz:wp.wz,h,sail:res.si}); res.rawIdx.push(rawPosts.length-1); } }
   /* Nahe Pfosten verschiedener Segel zu einem zusammenfassen (gemeinsame Ecke);
@@ -1655,6 +1669,7 @@ function wireStaticUI(){
   $('timeInput').onchange=applyTimeInput; $('timeInput').oninput=applyTimeInput;
   const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
   const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
+  const chkFP=$('chkFreePosts'); if(chkFP){ chkFP.checked=S.optimizer_freePosts; chkFP.onchange=()=>{ S.optimizer_freePosts=chkFP.checked; touch(); }; }
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
   wireEvalRectInputs();
   /* Zeitfenster-Inputs */
