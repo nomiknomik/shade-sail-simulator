@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator v5.8 — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v5.9 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -92,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.8 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Feinschliff auf echter KPI · Diversifizierungs-Optimizer (Top-K S1 × bestes S2 je S1) · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
+      <div class="ver">Version 5.9 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Feinschliff auf echter KPI · Bidirektionaler Top-K-Optimizer (vorwärts + rückwärts) · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -1374,16 +1374,19 @@ function _runSailOptimizer(){
     return {placements,total,ok};
   }
 
-  /* --- Top-K Diversifizierungs-Optimizer v5.8: K beste S1-Positionen × bestes S2 je S1 ---
-     Phase-D-Erkenntnis: independente Top-K beider Segel überlappen immer (gleiche Zielzone).
-     Lösung: S1 → Top-K (solo), für jede S1-Position → placeOneSail(S2, prev=S1).
-     S2 muss ERZWUNGEN eine andere Zone finden → echte komplementäre Abdeckung.
-     Kosten: K × placeOneSail(S2) → K-fach besser als reiner Greedy. */
+  /* --- Top-K Diversifizierungs-Optimizer v5.9: vorwärts UND rückwärts ---
+     v5.8: K beste S1-Positionen × bestes S2 je S1 (nur Vorwärtsrichtung).
+     v5.9: ZUSÄTZLICH K beste S2-Positionen × bestes S1 je S2 (Rückwärtsrichtung).
+     Hintergrund: Belegt S1 (größeres Segel) alle K Top-Positionen in derselben Zone,
+     findet S2 keine gute komplementäre Zone → Rückwärtsdurchlauf löst das Problem,
+     indem S2 zuerst positioniert wird und S1 die verbleibende Fläche abdeckt.
+     Kosten: 2K × placeOneSail → doppelter Aufwand, deutlich bessere Abdeckung. */
   const TOP_K=5;
   let runResult;
   if(activeSails.length===2){
-    const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
     let bestCombo=null, bestComboScore=-1;
+    /* Vorwärts: K beste S1-Positionen × bestes S2 je S1 */
+    const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
     for(const p0 of topK0){
       const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
       const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
@@ -1397,6 +1400,23 @@ function _runSailOptimizer(){
         bestCombo=[
           {cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope,score:p0.score},
           {cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope,score:pl1.score}
+        ];
+      }
+    }
+    /* Rückwärts: K beste S2-Positionen × bestes S1 je S2 */
+    const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
+    for(const p1 of topK1){
+      const polys1=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,dir));
+      const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
+      const prevPolys1=sunDirs.map((_,ti)=>[polys1[ti]]);
+      const pl0=placeOneSail(activeSails[0].s,prevPolys1,[fp1]);
+      if(!pl0) continue;
+      const combo=p1.score+pl0.score;
+      if(combo>bestComboScore){
+        bestComboScore=combo;
+        bestCombo=[
+          {cx:pl0.cx,cz:pl0.cz,rot:pl0.rot,slope:pl0.slope,score:pl0.score},
+          {cx:p1.cx,cz:p1.cz,rot:p1.rot,slope:p1.slope,score:p1.score}
         ];
       }
     }
