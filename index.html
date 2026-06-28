@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.3 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm) · Gesamtschatten als Vereinigung (keine Doppelzählung der Überlappung) · Pfosten automatisch an die Wand</div>
+      <div class="ver">Version 5.4 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Optimier-Button oben rechts · Pfosten automatisch an die Wand</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -1194,9 +1194,12 @@ function optimizePostAssignment(){
 function optimizeSailPositions(){
   const btn=document.getElementById('btnOptimizeSails');
   if(btn){ btn.disabled=true; btn.textContent='⏳ …'; }
+  const btn2=document.getElementById('btnOptimizeFloat');
+  if(btn2){ btn2.disabled=true; }
   setTimeout(()=>{
     const resultMsg=_runSailOptimizer();
     if(btn){ btn.disabled=false; }
+    if(btn2){ btn2.disabled=false; }
     applyTranslations();
     if(resultMsg){ const st=document.getElementById('saveState'); if(st) st.textContent=resultMsg; }
   },16);
@@ -1411,6 +1414,13 @@ function _runSailOptimizer(){
               s.dx=ox+ddx; s.dz=oz+ddz; const v=kpiNow();
               if(v>cur+1e-6){ cur=v; improved=true; roundImproved=true; }
               else { s.dx=ox; s.dz=oz; } } }
+          // Rotations-Feinschliff: Schritte analog zu Positions-Stufen
+          const rdeg = stp < 0.1 ? 1 : stp < 0.2 ? 2 : 5;
+          for(const dd of [rdeg,-rdeg]){
+            const or=s.rot; s.rot=or+dd; const v=kpiNow();
+            if(v>cur+1e-6){ cur=v; roundImproved=true; }
+            else s.rot=or;
+          }
         }
       }
       if(!roundImproved) break;
@@ -1748,5 +1758,12 @@ $('panel').addEventListener('dblclick',e=>{ const el=e.target; if(el.tagName==='
 applyTranslations();
 refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
 </script>
+<button id="btnOptimizeFloat" data-i18n="btn-optimize-sails"
+  onclick="optimizeSailPositions()"
+  style="position:fixed;top:12px;right:16px;z-index:200;padding:7px 14px;
+         background:#2c6fbb;color:#fff;border:none;border-radius:6px;
+         cursor:pointer;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.4)">
+  Segel optimieren
+</button>
 </body>
 </html>
