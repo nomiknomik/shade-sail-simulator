@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.4 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Optimier-Button oben rechts · Pfosten automatisch an die Wand</div>
+      <div class="ver">Version 5.5 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm + Rotation) · Gesamtschatten als Vereinigung · Konfigurierbares Auswertungsfenster · Optimier-Button oben rechts (fix) · Pfosten automatisch an die Wand</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -186,6 +186,8 @@
     <div class="group">
       <h2 data-i18n="sec-dayshade"></h2>
       <p class="hint" data-i18n="hint-dayshade"></p>
+      <div class="row"><label data-i18n="lbl-analysis-from"></label><input id="analysisStart" type="time" style="flex:1;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:2px 4px"></div>
+      <div class="row"><label data-i18n="lbl-analysis-to"></label><input id="analysisEnd" type="time" style="flex:1;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:2px 4px"></div>
       <div class="readout" id="dayShade"></div>
       <div class="row" style="margin-top:8px">
         <label data-i18n="lbl-eval-on"></label>
@@ -331,6 +333,8 @@ const TRANSLATIONS = {
     'dayshade-none': 'Kein aktives Segel.',
     'dayshade-total': 'Gesamt',
     'dayshade-overlap': 'Überlappung (verschwendet)',
+    'lbl-analysis-from': 'Auswertung von',
+    'lbl-analysis-to': 'bis',
     'sun-alt': 'Höhe über Horizont',
     'sun-az': 'Azimut (0°=N)',
     'sun-status': 'Status',
@@ -446,6 +450,8 @@ const TRANSLATIONS = {
     'dayshade-none': 'No active sail.',
     'dayshade-total': 'Total',
     'dayshade-overlap': 'Overlap (wasted)',
+    'lbl-analysis-from': 'Analysis from',
+    'lbl-analysis-to': 'to',
     'sun-alt': 'Altitude',
     'sun-az': 'Azimuth (0°=N)',
     'sun-status': 'Status',
@@ -561,6 +567,8 @@ const TRANSLATIONS = {
     'dayshade-none': 'Нет активных парусов.',
     'dayshade-total': 'Итого',
     'dayshade-overlap': 'Перекрытие (впустую)',
+    'lbl-analysis-from': 'Анализ с',
+    'lbl-analysis-to': 'до',
     'sun-alt': 'Высота над горизонтом',
     'sun-az': 'Азимут (0°=С)',
     'sun-status': 'Статус',
@@ -652,6 +660,7 @@ function defaultState(){
     },
     person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
     evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
+    analysisStart:660, analysisEnd:900,  /* Auswertungsfenster: 660=11:00, 900=15:00 */
   };
 }
 
@@ -695,6 +704,9 @@ function migrate(st){
   st.evalRect=Object.assign({},d.evalRect,st.evalRect||{});
   if(typeof st.evalRect.on!=='boolean') st.evalRect.on=false;
   ['x0','y0','x1','y1'].forEach(k=>{ if(typeof st.evalRect[k]!=='number'||isNaN(st.evalRect[k])) st.evalRect[k]=0; });
+  if(typeof st.analysisStart!=='number'||st.analysisStart<0||st.analysisStart>1380) st.analysisStart=660;
+  if(typeof st.analysisEnd!=='number'||st.analysisEnd<60||st.analysisEnd>1440) st.analysisEnd=900;
+  if(st.analysisEnd<=st.analysisStart) st.analysisEnd=st.analysisStart+60;
   return st;
 }
 
@@ -1094,7 +1106,7 @@ function evalRectWorld(){ const rect=S.evalRect; if(!rect||!rect.on) return null
    Eine Zelle zählt für ein Segel nur, wenn sie im Segelschatten liegt UND nicht bereits
    durch Wand/Pergola beschattet ist (Überschneidung wird abgezogen). Innerhalb des Gartens. */
 function computeDayShade(){
-  const start=600,end=1080,step=15, hours=(end-start)/60;
+  const start=S.analysisStart,end=S.analysisEnd,step=15, hours=(end-start)/60;
   const {w,d}=S.garden; const hw=w/2,hd=d/2;
   const NX=Math.max(12,Math.min(70,Math.round(w/0.2))), NY=Math.max(12,Math.min(70,Math.round(d/0.2)));
   const cellA=(w/NX)*(d/NY);
@@ -1119,7 +1131,8 @@ function computeDayShade(){
       if(anyHit){ unionSum+=cellA*wgt; if(c.inRect) unionSumRect+=cellA*wgt; }
     }
   }
-  const res={ window:'10:00–18:00', date:S.dateStr, stepMin:step, gridM:ROUND(w/NX), rectOn, perSail:[],
+  const fmtMin=m=>`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+  const res={ window:`${fmtMin(start)}–${fmtMin(end)}`, date:S.dateStr, stepMin:step, gridM:ROUND(w/NX), rectOn, perSail:[],
     total_m2h:0, total_avg_m2:0, total_rect_m2h:0, total_rect_avg_m2:0, overlap_m2h:0, overlap_rect_m2h:0 };
   let sumInt=0, sumIntR=0;   /* Summe der Einzel-Segel-Integrale (mit Doppelzaehlung) -> nur fuer die Ueberlappungs-Diagnose */
   S.sails.forEach((s,si)=>{ if(!s.on) return;
@@ -1150,7 +1163,7 @@ function optimizePostAssignment(){
   function fastScore(assignment){
     const orig=activeSails.map(s=>[...S.sails[s.idx].posts]);
     activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=assignment[i]; });
-    const start=600,end=1080,step=30;
+    const start=S.analysisStart,end=S.analysisEnd,step=30;
     const {w,d}=S.garden; const hw=w/2,hd=d/2;
     const NX=20,NY=20; const cellA=(w/NX)*(d/NY);
     const Rw=evalRectWorld(); let score=0;
@@ -1219,8 +1232,8 @@ function _runSailOptimizer(){
 
   /* ---- Sonnenrichtungen fuer das EINGEGEBENE Datum (S.dateStr), 30-min-Schritte 10-18 Uhr ---- */
   const sunDirs=[]; let sunSumX=0,sunSumZ=0;
-  for(let m=600;m<=1080;m+=30){ const {dir,alt}=sunDirAtMin(m);
-    if(alt>0&&dir.y>0.02){ sunDirs.push({dir,wgt:(m===600||m===1080)?0.5:1}); sunSumX+=dir.x; sunSumZ+=dir.z; } }
+  for(let m=S.analysisStart;m<=S.analysisEnd;m+=30){ const {dir,alt}=sunDirAtMin(m);
+    if(alt>0&&dir.y>0.02){ sunDirs.push({dir,wgt:(m===S.analysisStart||m===S.analysisEnd)?0.5:1}); sunSumX+=dir.x; sunSumZ+=dir.z; } }
   if(!sunDirs.length) return;
   /* Mittlere horizontale Sonnenrichtung -> Kipp-Achse (Segel zur Sonne neigen = groesserer Bodenschatten) */
   const tlen=Math.hypot(sunSumX,sunSumZ); const tdx=tlen>1e-6?sunSumX/tlen:0, tdz=tlen>1e-6?sunSumZ/tlen:1;
@@ -1551,8 +1564,13 @@ function wireStaticUI(){
   const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
   wireEvalRectInputs();
+  /* Zeitfenster-Inputs */
+  const toTimeStr=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const aS=$('analysisStart'); if(aS){ aS.value=toTimeStr(S.analysisStart); aS.onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisStart=h*60+(m||0); renderDayShade(); touch(); } }; }
+  const aE=$('analysisEnd');   if(aE){ aE.value=toTimeStr(S.analysisEnd);   aE.onchange=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisEnd=h*60+(m||0);   renderDayShade(); touch(); } }; }
   const bo=$('btnOptimizePosts'); if(bo) bo.onclick=()=>optimizePostAssignment();
   const bs=$('btnOptimizeSails'); if(bs) bs.onclick=()=>optimizeSailPositions();
+  const bf=$('btnOptimizeFloat'); if(bf) bf.onclick=()=>optimizeSailPositions();  /* Float-Button: onclick im Modul-Scope verdrahten (HTML-onclick kaputt bei type=module) */
 }
 function syncEvalRectInputs(){
   const r=S.evalRect;
@@ -1759,7 +1777,6 @@ applyTranslations();
 refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
 </script>
 <button id="btnOptimizeFloat" data-i18n="btn-optimize-sails"
-  onclick="optimizeSailPositions()"
   style="position:fixed;top:12px;right:16px;z-index:200;padding:7px 14px;
          background:#2c6fbb;color:#fff;border:none;border-radius:6px;
          cursor:pointer;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.4)">
