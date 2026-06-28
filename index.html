@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator v5.9 — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v6.0 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -92,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.9 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Feinschliff auf echter KPI · Bidirektionaler Top-K-Optimizer (vorwärts + rückwärts) · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
+      <div class="ver">Version 6.0 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Alter bidirektionaler Greedy + Top-K konkurrieren, KPI-Bester gewinnt (nie schlechter als alt) · Feinschliff auf echter KPI · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -1374,15 +1374,21 @@ function _runSailOptimizer(){
     return {placements,total,ok};
   }
 
-  /* --- Top-K Diversifizierungs-Optimizer v5.9: vorwärts UND rückwärts ---
-     v5.8: K beste S1-Positionen × bestes S2 je S1 (nur Vorwärtsrichtung).
-     v5.9: ZUSÄTZLICH K beste S2-Positionen × bestes S1 je S2 (Rückwärtsrichtung).
-     Hintergrund: Belegt S1 (größeres Segel) alle K Top-Positionen in derselben Zone,
-     findet S2 keine gute komplementäre Zone → Rückwärtsdurchlauf löst das Problem,
-     indem S2 zuerst positioniert wird und S1 die verbleibende Fläche abdeckt.
-     Kosten: 2K × placeOneSail → doppelter Aufwand, deutlich bessere Abdeckung. */
+  /* --- Optimizer-Strategie v6.0: ALTE bidirektionale Greedy-Methode (vor v5.8)
+     WIEDERHERGESTELLT + Top-K-Diversifizierung. ALLE Kandidaten werden in Phase 2
+     gebunden, per ECHTER KPI (computeDayShade = Panel-Zahl) bewertet, der beste gewinnt.
+     Grund (ToDo Alexander): v5.8 ersetzte den alten greedyRun([0,1])/([1,0]) durch
+     reines Top-K und lieferte teils SCHLECHTERE Positionen als die ältere Version.
+     Jetzt konkurrieren beide Verfahren auf der echten Panel-Zahl -> das Ergebnis kann
+     NIE schlechter als die alte Version sein. */
   const TOP_K=5;
-  let runResult;
+  const candidates=[];
+
+  /* (1) ALT wiederhergestellt: bidirektionaler Greedy mit Hill-Climb (beide Reihenfolgen) */
+  const greedyOrders = activeSails.length===2 ? [[0,1],[1,0]] : [activeSails.map((_,i)=>i)];
+  for(const ord of greedyOrders){ const r=greedyRun(ord); if(r.ok) candidates.push(r); }
+
+  /* (2) Top-K-Diversifizierung (v5.8/5.9): vorwärts + rückwärts – nur bei 2 Segeln */
   if(activeSails.length===2){
     let bestCombo=null, bestComboScore=-1;
     /* Vorwärts: K beste S1-Positionen × bestes S2 je S1 */
@@ -1390,18 +1396,15 @@ function _runSailOptimizer(){
     for(const p0 of topK0){
       const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
       const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
-      /* prevSailPolys[ti]=[S1-Schatten@ti] → placeOneSail sucht Zone ohne S1-Überlappung */
       const prevPolys0=sunDirs.map((_,ti)=>[polys0[ti]]);
       const pl1=placeOneSail(activeSails[1].s,prevPolys0,[fp0]);
       if(!pl1) continue;
       const combo=p0.score+pl1.score;
-      if(combo>bestComboScore){
-        bestComboScore=combo;
+      if(combo>bestComboScore){ bestComboScore=combo;
         bestCombo=[
           {cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope,score:p0.score},
           {cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope,score:pl1.score}
-        ];
-      }
+        ]; }
     }
     /* Rückwärts: K beste S2-Positionen × bestes S1 je S2 */
     const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
@@ -1412,132 +1415,126 @@ function _runSailOptimizer(){
       const pl0=placeOneSail(activeSails[0].s,prevPolys1,[fp1]);
       if(!pl0) continue;
       const combo=p1.score+pl0.score;
-      if(combo>bestComboScore){
-        bestComboScore=combo;
+      if(combo>bestComboScore){ bestComboScore=combo;
         bestCombo=[
           {cx:pl0.cx,cz:pl0.cz,rot:pl0.rot,slope:pl0.slope,score:pl0.score},
           {cx:p1.cx,cz:p1.cz,rot:p1.rot,slope:p1.slope,score:p1.score}
-        ];
-      }
+        ]; }
     }
-    if(bestCombo){
-      runResult={ ok:true, total:bestComboScore,
-        placements:[
-          {cx:bestCombo[0].cx,cz:bestCombo[0].cz,rot:bestCombo[0].rot,slope:bestCombo[0].slope,score:bestCombo[0].score},
-          {cx:bestCombo[1].cx,cz:bestCombo[1].cz,rot:bestCombo[1].rot,slope:bestCombo[1].slope,score:bestCombo[1].score}
-        ]};
-    } else {
-      runResult=greedyRun(activeSails.map((_,i)=>i));
-    }
-  } else {
-    runResult=greedyRun(activeSails.map((_,i)=>i));
+    if(bestCombo){ candidates.push({ ok:true, total:bestComboScore,
+      placements:[
+        {cx:bestCombo[0].cx,cz:bestCombo[0].cz,rot:bestCombo[0].rot,slope:bestCombo[0].slope,score:bestCombo[0].score},
+        {cx:bestCombo[1].cx,cz:bestCombo[1].cz,rot:bestCombo[1].rot,slope:bestCombo[1].slope,score:bestCombo[1].score}
+      ]}); }
   }
-  if(!runResult.ok){
-    /* Mind. ein Segel passt nicht in den Garten -> Originalzustand beibehalten */
+
+  if(!candidates.length){
+    /* Kein Kandidat passt in den Garten -> Originalzustand beibehalten */
     return t('opt-reverted').replace('{a}',fmt(beforeKPI)).replace('{b}',fmt(beforeKPI));
   }
-  const results=activeSails.map((as,i)=>({si:as.si,s:as.s,
-    cx:runResult.placements[i].cx, cz:runResult.placements[i].cz,
-    rot:runResult.placements[i].rot, slope:runResult.placements[i].slope}));
 
-  /* ---- Phase 2: Pfosten an die Waende, Segel schwebt frei (Seile ueberbruecken) ---- */
-  /* Ziel-Ecken (Welt-XZ) je Segel aus der optimierten Platzierung */
-  for(const res of results){ res.corners=cornersOf(res.s,res.cx,res.cz,res.rot); }
-  /* Jede Ecke radial vom Segelzentrum nach aussen bis an den Gartenrand verlaengern = Pfostenfuss
-     -> Seile ziehen logisch nach aussen, Pfosten stehen an der Wand */
-  function toWall(cx,cz,px,pz){ let ux=px-cx,uz=pz-cz; const L=Math.hypot(ux,uz)||1e-6; ux/=L; uz/=L;
-    let tBest=Infinity;
-    if(ux>1e-6) tBest=Math.min(tBest,(hw-cx)/ux); else if(ux<-1e-6) tBest=Math.min(tBest,(-hw-cx)/ux);
-    if(uz>1e-6) tBest=Math.min(tBest,(hd-cz)/uz); else if(uz<-1e-6) tBest=Math.min(tBest,(-hd-cz)/uz);
-    if(!isFinite(tBest)) tBest=L;
-    return { wx:cx+ux*tBest, wz:cz+uz*tBest }; }
-  /* Roh-Pfosten je Segelecke (Soll-Hoehe aus der Kipp-Ebene am Pfostenfuss)
-     optimizer_freePosts=true → Pfosten direkt an Segel-Ecke (kein toWall) */
-  const rawPosts=[];
-  for(const res of results){ res.rawIdx=[];
-    for(const c of res.corners){
-      const wp=S.optimizer_freePosts
-        ? {wx:c.wx,wz:c.wz}
-        : toWall(res.cx,res.cz,c.wx,c.wz);
-      const h=Math.max(H_MIN,Math.min(H_MAX,tiltPlane(wp.wx,wp.wz,res.cx,res.cz,res.slope)));
-      rawPosts.push({wx:wp.wx,wz:wp.wz,h,sail:res.si}); res.rawIdx.push(rawPosts.length-1); } }
-  /* Nahe Pfosten verschiedener Segel zu einem zusammenfassen (gemeinsame Ecke);
-     niemals zwei Ecken DESSELBEN Segels mergen (sonst entartet das Segel) */
-  const clusters=[]; const rawToCluster=[];
-  for(const rp of rawPosts){ let found=-1;
-    for(let ci=0;ci<clusters.length;ci++){ if(clusters[ci].sails.has(rp.sail)) continue;
-      const dx=clusters[ci].wx-rp.wx,dz=clusters[ci].wz-rp.wz;
-      if(Math.hypot(dx,dz)<0.6){ found=ci; break; } }
-    if(found>=0){ const cl=clusters[found];
-      cl.wx=(cl.wx*cl.n+rp.wx)/(cl.n+1); cl.wz=(cl.wz*cl.n+rp.wz)/(cl.n+1); cl.h=(cl.h*cl.n+rp.h)/(cl.n+1);
-      cl.n++; cl.sails.add(rp.sail); rawToCluster.push(found); }
-    else { clusters.push({wx:rp.wx,wz:rp.wz,h:rp.h,n:1,sails:new Set([rp.sail])}); rawToCluster.push(clusters.length-1); } }
-  /* Mehr als 6 Pfosten -> naechstes (moeglichst segel-disjunktes) Paar mitteln */
-  while(clusters.length>6){
-    let minD=Infinity,mi=0,mj=1,foundDisjoint=false;
-    for(let i=0;i<clusters.length;i++) for(let j=i+1;j<clusters.length;j++){
-      const disjoint=![...clusters[i].sails].some(x=>clusters[j].sails.has(x));
-      const dx=clusters[i].wx-clusters[j].wx,dz=clusters[i].wz-clusters[j].wz,dd=dx*dx+dz*dz;
-      if(disjoint&&!foundDisjoint){ foundDisjoint=true; minD=dd;mi=i;mj=j; }
-      else if(disjoint===foundDisjoint && dd<minD){ minD=dd;mi=i;mj=j; } }
-    clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
-    clusters[mi].h=(clusters[mi].h+clusters[mj].h)/2; clusters[mj].sails.forEach(x=>clusters[mi].sails.add(x));
-    rawToCluster.forEach((c,k)=>{ if(c===mj) rawToCluster[k]=mi; else if(c>mj) rawToCluster[k]=c-1; });
-    clusters.splice(mj,1); }
+  /* ---- Phase 2 + Feinschliff als Funktion: bindet eine Platzierung an Pfosten,
+     poliert auf der ECHTEN KPI und liefert die echte Panel-Zahl zurueck.
+     Wird fuer JEDEN Kandidaten ausgefuehrt -> der KPI-beste gewinnt (alt vs. neu). ---- */
+  function bindAndPolish(placements){
+    const results=activeSails.map((as,i)=>({si:as.si,s:as.s,
+      cx:placements[i].cx, cz:placements[i].cz,
+      rot:placements[i].rot, slope:placements[i].slope}));
 
-  /* ---- S.points aus Clustern, auf 6 auffuellen (Reload-Migration erwartet >=6) ---- */
-  const newPoints=clusters.map(c=>({ x:c.wx-B.x, y:c.wz-B.z, h:Math.round(Math.max(H_MIN,Math.min(H_MAX,c.h))*10)/10 }));
-  while(newPoints.length<6){ const last=newPoints[newPoints.length-1]||{x:hw-CLEAR-B.x,y:hd-CLEAR-B.z,h:H_CTR}; newPoints.push({x:last.x,y:last.y,h:last.h}); }
-  S.points=newPoints;
+    /* Phase 2: Pfosten an die Waende, Segel schwebt frei (Seile ueberbruecken) */
+    for(const res of results){ res.corners=cornersOf(res.s,res.cx,res.cz,res.rot); }
+    function toWall(cx,cz,px,pz){ let ux=px-cx,uz=pz-cz; const L=Math.hypot(ux,uz)||1e-6; ux/=L; uz/=L;
+      let tBest=Infinity;
+      if(ux>1e-6) tBest=Math.min(tBest,(hw-cx)/ux); else if(ux<-1e-6) tBest=Math.min(tBest,(-hw-cx)/ux);
+      if(uz>1e-6) tBest=Math.min(tBest,(hd-cz)/uz); else if(uz<-1e-6) tBest=Math.min(tBest,(-hd-cz)/uz);
+      if(!isFinite(tBest)) tBest=L;
+      return { wx:cx+ux*tBest, wz:cz+uz*tBest }; }
+    const rawPosts=[];
+    for(const res of results){ res.rawIdx=[];
+      for(const c of res.corners){
+        const wp=S.optimizer_freePosts
+          ? {wx:c.wx,wz:c.wz}
+          : toWall(res.cx,res.cz,c.wx,c.wz);
+        const h=Math.max(H_MIN,Math.min(H_MAX,tiltPlane(wp.wx,wp.wz,res.cx,res.cz,res.slope)));
+        rawPosts.push({wx:wp.wx,wz:wp.wz,h,sail:res.si}); res.rawIdx.push(rawPosts.length-1); } }
+    const clusters=[]; const rawToCluster=[];
+    for(const rp of rawPosts){ let found=-1;
+      for(let ci=0;ci<clusters.length;ci++){ if(clusters[ci].sails.has(rp.sail)) continue;
+        const dx=clusters[ci].wx-rp.wx,dz=clusters[ci].wz-rp.wz;
+        if(Math.hypot(dx,dz)<0.6){ found=ci; break; } }
+      if(found>=0){ const cl=clusters[found];
+        cl.wx=(cl.wx*cl.n+rp.wx)/(cl.n+1); cl.wz=(cl.wz*cl.n+rp.wz)/(cl.n+1); cl.h=(cl.h*cl.n+rp.h)/(cl.n+1);
+        cl.n++; cl.sails.add(rp.sail); rawToCluster.push(found); }
+      else { clusters.push({wx:rp.wx,wz:rp.wz,h:rp.h,n:1,sails:new Set([rp.sail])}); rawToCluster.push(clusters.length-1); } }
+    while(clusters.length>6){
+      let minD=Infinity,mi=0,mj=1,foundDisjoint=false;
+      for(let i=0;i<clusters.length;i++) for(let j=i+1;j<clusters.length;j++){
+        const disjoint=![...clusters[i].sails].some(x=>clusters[j].sails.has(x));
+        const dx=clusters[i].wx-clusters[j].wx,dz=clusters[i].wz-clusters[j].wz,dd=dx*dx+dz*dz;
+        if(disjoint&&!foundDisjoint){ foundDisjoint=true; minD=dd;mi=i;mj=j; }
+        else if(disjoint===foundDisjoint && dd<minD){ minD=dd;mi=i;mj=j; } }
+      clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
+      clusters[mi].h=(clusters[mi].h+clusters[mj].h)/2; clusters[mj].sails.forEach(x=>clusters[mi].sails.add(x));
+      rawToCluster.forEach((c,k)=>{ if(c===mj) rawToCluster[k]=mi; else if(c>mj) rawToCluster[k]=c-1; });
+      clusters.splice(mj,1); }
 
-  /* ---- Segel an die finalen Pfosten binden: posts, dx/dz (Zentrum), rot (Ausrichtung) ----
-     dx/dz setzen das Segelzentrum exakt auf die optimierte Position; rot korrigiert bestAngle2D,
-     sodass die gerenderte Ausrichtung der Optimierung entspricht. So reproduziert der Render
-     den optimierten Segel-Fussabdruck (Hoehen aus den Pfosten-Tops = Kipp-Ebene). */
-  for(const res of results){ const s=S.sails[res.si];
-    const idx=res.rawIdx.map(ri=>rawToCluster[ri]); s.posts=idx;
-    const pg=idx.map(ci=>({x:clusters[ci].wx,z:clusters[ci].wz}));
-    const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
-    s.dx=res.cx-G.x; s.dz=res.cz-G.z;
-    const local=sailLocalCorners(res.s).map(v=>({x:v.x,z:v.z}));
-    const base=bestAngle2D(local,pg,G);
-    let rotDeg=res.rot-base/DEG; rotDeg=((rotDeg%360)+360)%360; if(rotDeg>180) rotDeg-=360;
-    s.rot=rotDeg;
-  }
+    const newPoints=clusters.map(c=>({ x:c.wx-B.x, y:c.wz-B.z, h:Math.round(Math.max(H_MIN,Math.min(H_MAX,c.h))*10)/10 }));
+    while(newPoints.length<6){ const last=newPoints[newPoints.length-1]||{x:hw-CLEAR-B.x,y:hd-CLEAR-B.z,h:H_CTR}; newPoints.push({x:last.x,y:last.y,h:last.h}); }
+    S.points=newPoints;
 
-  /* ---- Feinschliff (v5.2): Coarse-to-Fine auf der ECHTEN KPI ----
-     Pfosten stehen fest an der Wand; das Segel schwebt frei -> nur dx/dz (Segelzentrum)
-     wird lokal nachjustiert -> exakt der Knopf, den man von Hand bewegt. Bewertet wird mit
-     computeDayShade (0.2-m-Raster, rect) = die Zahl im Panel. Schritte 0.30 -> 0.15 -> 0.05 m.
-     Nur strikte Verbesserungen werden behalten -> kann nie verschlechtern. */
-  (function polishKPI(){
-    let cur=kpiNow();
-    for(let round=0;round<2;round++){
-      let roundImproved=false;
-      for(let si=0;si<S.sails.length;si++){ const s=S.sails[si]; if(!s.on) continue;
-        for(const stp of [0.30,0.15,0.05]){
-          let improved=true, guard=0;
-          while(improved && guard++<40){ improved=false;
-            const cands=[[stp,0],[-stp,0],[0,stp],[0,-stp],[stp,stp],[stp,-stp],[-stp,stp],[-stp,-stp]];
-            for(const [ddx,ddz] of cands){ const ox=s.dx,oz=s.dz;
-              s.dx=ox+ddx; s.dz=oz+ddz; const v=kpiNow();
-              if(v>cur+1e-6){ cur=v; improved=true; roundImproved=true; }
-              else { s.dx=ox; s.dz=oz; } } }
-          // Rotations-Feinschliff: Schritte analog zu Positions-Stufen
-          const rdeg = stp < 0.1 ? 1 : stp < 0.2 ? 2 : 5;
-          for(const dd of [rdeg,-rdeg]){
-            const or=s.rot; s.rot=or+dd; const v=kpiNow();
-            if(v>cur+1e-6){ cur=v; roundImproved=true; }
-            else s.rot=or;
+    for(const res of results){ const s=S.sails[res.si];
+      const idx=res.rawIdx.map(ri=>rawToCluster[ri]); s.posts=idx;
+      const pg=idx.map(ci=>({x:clusters[ci].wx,z:clusters[ci].wz}));
+      const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
+      s.dx=res.cx-G.x; s.dz=res.cz-G.z;
+      const local=sailLocalCorners(res.s).map(v=>({x:v.x,z:v.z}));
+      const base=bestAngle2D(local,pg,G);
+      let rotDeg=res.rot-base/DEG; rotDeg=((rotDeg%360)+360)%360; if(rotDeg>180) rotDeg-=360;
+      s.rot=rotDeg;
+    }
+
+    /* Feinschliff (v5.2): Coarse-to-Fine auf der ECHTEN KPI -> nur dx/dz/rot lokal nachjustiert */
+    (function polishKPI(){
+      let cur=kpiNow();
+      for(let round=0;round<2;round++){
+        let roundImproved=false;
+        for(let si=0;si<S.sails.length;si++){ const s=S.sails[si]; if(!s.on) continue;
+          for(const stp of [0.30,0.15,0.05]){
+            let improved=true, guard=0;
+            while(improved && guard++<40){ improved=false;
+              const cands=[[stp,0],[-stp,0],[0,stp],[0,-stp],[stp,stp],[stp,-stp],[-stp,stp],[-stp,-stp]];
+              for(const [ddx,ddz] of cands){ const ox=s.dx,oz=s.dz;
+                s.dx=ox+ddx; s.dz=oz+ddz; const v=kpiNow();
+                if(v>cur+1e-6){ cur=v; improved=true; roundImproved=true; }
+                else { s.dx=ox; s.dz=oz; } } }
+            const rdeg = stp < 0.1 ? 1 : stp < 0.2 ? 2 : 5;
+            for(const dd of [rdeg,-rdeg]){
+              const or=s.rot; s.rot=or+dd; const v=kpiNow();
+              if(v>cur+1e-6){ cur=v; roundImproved=true; }
+              else s.rot=or;
+            }
           }
         }
+        if(!roundImproved) break;
       }
-      if(!roundImproved) break;
-    }
-  })();
+    })();
+    return kpiNow();
+  }
+
+  /* ---- Alle Kandidaten binden+polieren, das nach echter KPI BESTE Ergebnis merken ---- */
+  let best={kpi:-Infinity, points:null, sails:null};
+  for(const cand of candidates){
+    const k=bindAndPolish(cand.placements);
+    if(k>best.kpi){ best={ kpi:k,
+      points:JSON.parse(JSON.stringify(S.points)),
+      sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) }; }
+  }
+  /* Bestes Ergebnis in den State zurueckschreiben */
+  S.points=JSON.parse(JSON.stringify(best.points));
+  best.sails.forEach((sv,i)=>{ S.sails[i].posts=[...sv.posts]; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
 
   /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung uebernehmen ---- */
-  const afterKPI=kpiNow();
+  const afterKPI=best.kpi;
   let key='opt-improved';
   if(afterKPI<=beforeKPI){
     S.points=beforeSnap.points;
