@@ -91,7 +91,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 5.1 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Pfosten automatisch an die Wand</div>
+      <div class="ver">Version 5.2 · DE/EN/RU · Segel-Optimierung (Sitzfläche, Sonnen-Neigung, beide Reihenfolgen) · Feinschliff auf echter KPI (~5 cm) · Pfosten automatisch an die Wand</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -350,7 +350,7 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Körpergröße',
     'btn-optimize-sails': '🎯 Ideale Segel-Position berechnen',
-    'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
+    'hint-optimize-sails': 'Optimiert für das eingegebene Datum (10–18 Uhr): Jedes Segel wird frei verschoben, gedreht und zur Sonne geneigt, sodass die Netto-Beschattung der Sitzfläche (Auswertungsrechteck, sonst ganzer Garten) maximal wird – bei 2 Segeln werden beide Reihenfolgen getestet. Ein abschließender Feinschliff justiert die Position in ~5-cm-Schritten direkt anhand der echten KPI nach. Anschließend werden die Pfosten automatisch an die Wände gesetzt; das Segel schwebt frei und wird über Seile aufgespannt. Das Ergebnis wird nur übernommen, wenn es die aktuelle Position verbessert.',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
   },
@@ -464,7 +464,7 @@ const TRANSLATIONS = {
     'person-label': 'Person',
     'lbl-person-h': 'Height',
     'btn-optimize-sails': '🎯 Calculate ideal sail position',
-    'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The result is only applied if it improves on the current layout.',
+    'hint-optimize-sails': 'Optimizes for the entered date (10–18h): each sail is freely moved, rotated and tilted towards the sun to maximize net shading of the seating area (evaluation rectangle, otherwise the whole garden) – with 2 sails both orders are tested. A final fine-tuning pass adjusts the position in ~5 cm steps directly against the real KPI. The posts are then placed automatically at the walls; the sail floats freely and is tensioned by ropes. The result is only applied if it improves on the current layout.',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
   },
@@ -578,7 +578,7 @@ const TRANSLATIONS = {
     'person-label': 'Человек',
     'lbl-person-h': 'Рост',
     'btn-optimize-sails': '🎯 Вычислить идеальное положение парусов',
-    'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Результат применяется только если он лучше текущего.',
+    'hint-optimize-sails': 'Оптимизация на введённую дату (10–18ч): каждый парус свободно перемещается, поворачивается и наклоняется к солнцу для максимального чистого затенения зоны отдыха (прямоугольник анализа, иначе весь сад) – при 2 парусах проверяются оба порядка. Заключительная тонкая настройка корректирует положение шагами ~5 см напрямую по реальному KPI. Затем столбы автоматически ставятся у стен; парус парит свободно и натягивается тросами. Результат применяется только если он лучше текущего.',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
   }
@@ -1382,6 +1382,30 @@ function _runSailOptimizer(){
     let rotDeg=res.rot-base/DEG; rotDeg=((rotDeg%360)+360)%360; if(rotDeg>180) rotDeg-=360;
     s.rot=rotDeg;
   }
+
+  /* ---- Feinschliff (v5.2): Coarse-to-Fine auf der ECHTEN KPI ----
+     Pfosten stehen fest an der Wand; das Segel schwebt frei -> nur dx/dz (Segelzentrum)
+     wird lokal nachjustiert -> exakt der Knopf, den man von Hand bewegt. Bewertet wird mit
+     computeDayShade (0.2-m-Raster, rect) = die Zahl im Panel. Schritte 0.30 -> 0.15 -> 0.05 m.
+     Nur strikte Verbesserungen werden behalten -> kann nie verschlechtern. */
+  (function polishKPI(){
+    let cur=kpiNow();
+    for(let round=0;round<2;round++){
+      let roundImproved=false;
+      for(let si=0;si<S.sails.length;si++){ const s=S.sails[si]; if(!s.on) continue;
+        for(const stp of [0.30,0.15,0.05]){
+          let improved=true, guard=0;
+          while(improved && guard++<40){ improved=false;
+            const cands=[[stp,0],[-stp,0],[0,stp],[0,-stp],[stp,stp],[stp,-stp],[-stp,stp],[-stp,-stp]];
+            for(const [ddx,ddz] of cands){ const ox=s.dx,oz=s.dz;
+              s.dx=ox+ddx; s.dz=oz+ddz; const v=kpiNow();
+              if(v>cur+1e-6){ cur=v; improved=true; roundImproved=true; }
+              else { s.dx=ox; s.dz=oz; } } }
+        }
+      }
+      if(!roundImproved) break;
+    }
+  })();
 
   /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung uebernehmen ---- */
   const afterKPI=kpiNow();
