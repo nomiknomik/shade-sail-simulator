@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v5.7 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -1300,6 +1300,26 @@ function _runSailOptimizer(){
   /* ---- Phase 1: ein Segel optimal frei platzieren (Greedy mit Netto-Score + Hill-Climb) ---- */
   /* prevFootprints: 2D-Fußabdrücke bereits platzierter Segel (XZ-Ebene).
      Positionen die sich mit diesen überschneiden werden übersprungen. */
+  /* Top-K Kandidaten aus dem Grobraster (kein Hill-Climb, kein prev-Ausschluss) */
+  function collectTopKGrid(s, K){
+    const cands=[];
+    for(const cx of cxArr) for(const cz of czArr){
+      for(const rot of rotArr){
+        const corners=cornersOf(s,cx,cz,rot);
+        if(!fits(corners)) continue;
+        for(const slope of tiltArr){
+          const sc=scoreSailAt(s,cx,cz,rot,slope,null);
+          if(cands.length<K || sc>cands[cands.length-1].score){
+            cands.push({cx,cz,rot,slope,score:sc});
+            cands.sort((a,b)=>b.score-a.score);
+            if(cands.length>K) cands.pop();
+          }
+        }
+      }
+    }
+    return cands;
+  }
+
   function placeOneSail(s,prevSailPolys,prevFootprints){
     let best=-1,bx=0,bz=0,br=0,bt=0,found=false;
     for(const cx of cxArr) for(const cz of czArr){
@@ -1346,11 +1366,41 @@ function _runSailOptimizer(){
     return {placements,total,ok};
   }
 
-  /* Beide Reihenfolgen testen (bei 2 Segeln), besten Gesamtscore nehmen */
-  let runResult=greedyRun(activeSails.map((_,i)=>i));
+  /* --- Top-K Kombinations-Suche (Aufgabe C): fuer 2 aktive Segel alle K×K Paare auswerten ---
+     Fuer 1 Segel: Greedy wie bisher (kein Vorteil durch Enumeration) */
+  const TOP_K=5;
+  let runResult;
   if(activeSails.length===2){
-    const alt=greedyRun([1,0]);
-    if(alt.ok && (!runResult.ok || alt.total>runResult.total)) runResult=alt;
+    const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
+    const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
+    let bestCombo=null, bestComboScore=-1;
+    for(const p0 of topK0){
+      const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
+      const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
+      for(const p1 of topK1){
+        const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
+        if(polysOverlap(fp0,fp1)) continue;
+        /* Heuristik: Zentren < 0.8m auseinander überspringen */
+        if(Math.hypot(p0.cx-p1.cx,p0.cz-p1.cz)<0.8) continue;
+        const addScore=scoreSailAt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,[polys0]);
+        const combo=p0.score+addScore;
+        if(combo>bestComboScore){ bestComboScore=combo; bestCombo=[p0,p1]; }
+      }
+    }
+    if(bestCombo){
+      /* Gefundenes Paar als placements-Struktur verpacken, damit Phase 2 unverändert bleibt */
+      runResult={ ok:true, total:bestComboScore,
+        placements:[
+          {cx:bestCombo[0].cx,cz:bestCombo[0].cz,rot:bestCombo[0].rot,slope:bestCombo[0].slope,score:bestCombo[0].score},
+          {cx:bestCombo[1].cx,cz:bestCombo[1].cz,rot:bestCombo[1].rot,slope:bestCombo[1].slope,score:bestCombo[1].score}
+        ]};
+    } else {
+      /* Fallback: Greedy (sollte nie passieren) */
+      runResult=greedyRun(activeSails.map((_,i)=>i));
+    }
+  } else {
+    /* 1 Segel: Greedy wie bisher */
+    runResult=greedyRun(activeSails.map((_,i)=>i));
   }
   if(!runResult.ok){
     /* Mind. ein Segel passt nicht in den Garten -> Originalzustand beibehalten */
