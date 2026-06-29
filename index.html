@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shade Sail Simulator v6.1 — 3D Garden Shadow Planner</title>
+<title>Shade Sail Simulator v6.2 — 3D Garden Shadow Planner</title>
 <meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
 <meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
 <meta name="author" content="Alexander Zabelyshenskiy">
@@ -92,7 +92,7 @@
   <aside id="panel">
     <header>
       <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
-      <div class="ver">Version 6.1 · DE/EN/RU · Pergola bis 15 m + vertikaler Sonnenschutz an allen 4 Seiten · Segel-Optimierung (Sitzfläche, Sonnen-Neigung) · Alter bidirektionaler Greedy + Top-K konkurrieren, KPI-Bester gewinnt (nie schlechter als alt) · Feinschliff auf echter KPI · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
+      <div class="ver">Version 6.2 · DE/EN/RU · Pergola bis 15 m + vertikaler Sonnenschutz an allen 4 Seiten · Segel-Optimierung mit Modell-Auswahl (Greedy · Kepler · Gauss · Darwin · Boltzmann) · synergetische gemeinsame Zielfunktion (jointScore) · ε-Toleranz für Gleichstand + Sekundärkriterien · Feinschliff auf echter KPI · Freie Pfosten-Option · Vereinigungs-Schatten · Konfigurierbares Auswertungsfenster</div>
       <div class="langbar">
         <button id="lang-de" class="active" onclick="setLang('de')">DE</button>
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -167,6 +167,20 @@
       <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.85em;cursor:pointer">
         <input type="checkbox" id="chkFreePosts"> <span data-i18n="lbl-free-posts"></span>
       </label>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.85em">
+        <label data-i18n="lbl-opt-model" style="white-space:nowrap"></label>
+        <select id="selOptModel" style="flex:1;min-width:0">
+          <option value="greedy-v6" data-i18n="opt-model-greedy"></option>
+          <option value="kepler" data-i18n="opt-model-kepler"></option>
+          <option value="gauss" data-i18n="opt-model-gauss"></option>
+          <option value="darwin" data-i18n="opt-model-darwin"></option>
+          <option value="boltzmann" data-i18n="opt-model-boltzmann"></option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.85em">
+        <label data-i18n="lbl-opt-tol" style="white-space:nowrap"></label>
+        <input type="number" id="numOptTol" min="0" max="20" step="0.5" style="width:64px"><span class="unit">m²·h</span>
+      </div>
       <p class="hint" data-i18n="hint-optimize-sails"></p>
     </div>
 
@@ -368,6 +382,13 @@ const TRANSLATIONS = {
     'lbl-free-posts': 'Pfosten frei platzieren',
     'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
     'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
+    'lbl-opt-model': 'Modell:',
+    'lbl-opt-tol': 'ε-Toleranz:',
+    'opt-model-greedy': 'Greedy (v6.1) – Standard',
+    'opt-model-kepler': 'Kepler – Analytischer Seed',
+    'opt-model-gauss': 'Gauss – Gemeinsamer Abstieg',
+    'opt-model-darwin': 'Darwin – Differentielle Evolution',
+    'opt-model-boltzmann': 'Boltzmann – Simuliertes Abkühlen',
   },
   en: {
     'page-title': 'Shade Sail Simulator',
@@ -491,6 +512,13 @@ const TRANSLATIONS = {
     'lbl-free-posts': 'Place posts freely',
     'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
     'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
+    'lbl-opt-model': 'Model:',
+    'lbl-opt-tol': 'ε-tolerance:',
+    'opt-model-greedy': 'Greedy (v6.1) – default',
+    'opt-model-kepler': 'Kepler – analytic seed',
+    'opt-model-gauss': 'Gauss – joint descent',
+    'opt-model-darwin': 'Darwin – differential evolution',
+    'opt-model-boltzmann': 'Boltzmann – simulated annealing',
   },
   ru: {
     'page-title': 'Симулятор Тентового Паруса',
@@ -614,6 +642,13 @@ const TRANSLATIONS = {
     'lbl-free-posts': 'Свободное размещение стоек',
     'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
     'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
+    'lbl-opt-model': 'Модель:',
+    'lbl-opt-tol': 'ε-допуск:',
+    'opt-model-greedy': 'Greedy (v6.1) – по умолчанию',
+    'opt-model-kepler': 'Kepler – аналитический сид',
+    'opt-model-gauss': 'Gauss – совместный спуск',
+    'opt-model-darwin': 'Darwin – дифференциальная эволюция',
+    'opt-model-boltzmann': 'Boltzmann – имитация отжига',
   }
 };
 
@@ -684,6 +719,8 @@ function defaultState(){
     evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
     analysisStart:660, analysisEnd:900,  /* Auswertungsfenster: 660=11:00, 900=15:00 */
     optimizer_freePosts:false,           /* Pfosten-Modus: false=Wand (Standard), true=frei */
+    optimizerModel:'greedy-v6',          /* gewähltes Optimierungsmodell (Dropdown) */
+    optimizerTolerance:2.0,              /* ε-Toleranz in m²·h: Ergebnisse innerhalb dieser Spanne gelten als gleich */
   };
 }
 
@@ -732,6 +769,8 @@ function migrate(st){
   if(typeof st.analysisEnd!=='number'||st.analysisEnd<60||st.analysisEnd>1440) st.analysisEnd=900;
   if(st.analysisEnd<=st.analysisStart) st.analysisEnd=st.analysisStart+60;
   if(typeof st.optimizer_freePosts!=='boolean') st.optimizer_freePosts=false;
+  if(['greedy-v6','kepler','gauss','darwin','boltzmann'].indexOf(st.optimizerModel)<0) st.optimizerModel='greedy-v6';
+  if(typeof st.optimizerTolerance!=='number'||isNaN(st.optimizerTolerance)||st.optimizerTolerance<0) st.optimizerTolerance=2.0;
   return st;
 }
 
@@ -1271,6 +1310,12 @@ function _runSailOptimizer(){
 
   /* ---- Regressions-Schutz: aktuellen Zustand + echte KPI (Sitzflaeche bevorzugt) als Baseline ---- */
   const kpiNow=()=>{ const r=computeDayShade(); return useRect? r.total_rect_m2h : r.total_m2h; };
+  /* ε-Toleranz (Nutzer-Wunsch): Ergebnisse innerhalb ±EPS m²·h gelten als gleich.
+     -> verhindert, dass knapp unterlegene (auch synergetische) Kandidaten untergehen, und
+        dient als Schwelle fuer den Regressionsschutz. Sekundaerkriterien bei Gleichstand:
+        weniger Ueberlappung, dann niedrigere maximale Pfostenhoehe. */
+  const EPS=Math.max(0, (typeof S.optimizerTolerance==='number'&&!isNaN(S.optimizerTolerance))? S.optimizerTolerance : 0);
+  const MODEL=S.optimizerModel||'greedy-v6';
   const beforeSnap={ points:JSON.parse(JSON.stringify(S.points)),
     sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) };
   const beforeKPI=kpiNow();
@@ -1333,6 +1378,38 @@ function _runSailOptimizer(){
         if(pv){ for(const pp of pv){ if(pointInPoly(c,pp)){ bad=true; break; } } if(bad) continue; }
         sc+=cellA*wgt; } }
     return sc; }
+
+  /* ---- Kontinuierliche Schranken fuer die globalen Modelle (Gauss/Darwin/Boltzmann) ---- */
+  const SLOPE_MIN=-0.25, SLOPE_MAX=0.25;
+  const CXMIN=-hw+CLEAR, CXMAX=hw-CLEAR, CZMIN=-hd+CLEAR, CZMAX=hd-CLEAR;
+  function clampVar(p){ p.cx=Math.max(CXMIN,Math.min(CXMAX,p.cx)); p.cz=Math.max(CZMIN,Math.min(CZMAX,p.cz));
+    p.rot=((p.rot%180)+180)%180; p.slope=Math.max(SLOPE_MIN,Math.min(SLOPE_MAX,p.slope)); return p; }
+
+  /* Machbarkeit eines GANZEN Layouts: alle Segel passen in den Garten UND ueberlappen
+     sich nicht im Fussabdruck (sonst kollidieren die Segelkoerper). */
+  function placementsFeasible(P){ const fps=[];
+    for(let i=0;i<P.length;i++){ const corners=cornersOf(activeSails[i].s,P[i].cx,P[i].cz,P[i].rot);
+      if(!fits(corners)) return false;
+      const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+      for(const pf of fps){ if(polysOverlap(fp,pf)) return false; }
+      fps.push(fp); }
+    return true; }
+
+  /* SURROGAT-KPI / Synergie-Score: Netto-Beschattung der Sitzflaeche als VEREINIGUNG
+     beider Segel (jede Zelle zaehlt nur einmal) abzueglich Wand/Pergola. Das ist die
+     gemeinsame Zielfunktion -> synergetische Konstellationen werden NICHT bestraft
+     (behebt das sequentielle Greedy-Problem). Schnell genug fuer DE/SA (18x18, 30-min). */
+  function jointScore(P){
+    if(!placementsFeasible(P)) return -Infinity;
+    let sc=0;
+    for(let ti=0;ti<sunDirs.length;ti++){ const {dir,wgt}=sunDirs[ti]; const blk=blockersPerStep[ti];
+      const polys=P.map((p,i)=>groundPolyWithTilt(activeSails[i].s,p.cx,p.cz,p.rot,p.slope,dir));
+      for(const c of cells){
+        let bad=false; for(const bp of blk){ if(pointInPoly(c,bp)){ bad=true; break; } } if(bad) continue;
+        let hit=false; for(const poly of polys){ if(pointInPoly(c,poly)){ hit=true; break; } }
+        if(hit) sc+=cellA*wgt; } }
+    return sc; }
+  function clonePlacements(P){ return P.map(p=>({cx:p.cx,cz:p.cz,rot:p.rot,slope:p.slope})); }
 
   /* ---- Grobes Suchraster: ~50-cm-Schritte ueber den Garten, 15-Grad-Rotation ---- */
   const xSt=Math.max(0.5,w/16),zSt=Math.max(0.5,d/16);
@@ -1410,58 +1487,189 @@ function _runSailOptimizer(){
     return {placements,total,ok};
   }
 
-  /* --- Optimizer-Strategie v6.0: ALTE bidirektionale Greedy-Methode (vor v5.8)
-     WIEDERHERGESTELLT + Top-K-Diversifizierung. ALLE Kandidaten werden in Phase 2
-     gebunden, per ECHTER KPI (computeDayShade = Panel-Zahl) bewertet, der beste gewinnt.
-     Grund (ToDo Alexander): v5.8 ersetzte den alten greedyRun([0,1])/([1,0]) durch
-     reines Top-K und lieferte teils SCHLECHTERE Positionen als die ältere Version.
-     Jetzt konkurrieren beide Verfahren auf der echten Panel-Zahl -> das Ergebnis kann
-     NIE schlechter als die alte Version sein. */
+  /* ============================================================
+     MODELL-REGISTRY  (Auswahl per Dropdown -> S.optimizerModel)
+     Jedes Modell erzeugt KANDIDATEN-Platzierungen {cx,cz,rot,slope}. ALLE Kandidaten
+     werden danach an Pfosten gebunden und auf der ECHTEN KPI (computeDayShade)
+     bewertet -> der ε-beste gewinnt. 'greedy-v6' laeuft IMMER als Baseline mit, damit
+     kein Modell schlechter als v6.1 werden kann (Regressionsschutz greift zusaetzlich).
+     ============================================================ */
   const TOP_K=5;
-  const candidates=[];
 
-  /* (1) ALT wiederhergestellt: bidirektionaler Greedy mit Hill-Climb (beide Reihenfolgen) */
-  const greedyOrders = activeSails.length===2 ? [[0,1],[1,0]] : [activeSails.map((_,i)=>i)];
-  for(const ord of greedyOrders){ const r=greedyRun(ord); if(r.ok) candidates.push(r); }
+  /* ---- Modell 'greedy-v6' (Baseline = v6.1): bidirektionaler Greedy + Top-K ---- */
+  function genGreedy(){
+    const cands=[];
+    const greedyOrders = activeSails.length===2 ? [[0,1],[1,0]] : [activeSails.map((_,i)=>i)];
+    for(const ord of greedyOrders){ const r=greedyRun(ord); if(r.ok) cands.push(r); }
+    if(activeSails.length===2){
+      let bestCombo=null, bestComboScore=-1;
+      const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
+      for(const p0 of topK0){
+        const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
+        const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
+        const prevPolys0=sunDirs.map((_,ti)=>[polys0[ti]]);
+        const pl1=placeOneSail(activeSails[1].s,prevPolys0,[fp0]);
+        if(!pl1) continue;
+        const combo=p0.score+pl1.score;
+        if(combo>bestComboScore){ bestComboScore=combo;
+          bestCombo=[{cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope},{cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope}]; }
+      }
+      const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
+      for(const p1 of topK1){
+        const polys1=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,dir));
+        const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
+        const prevPolys1=sunDirs.map((_,ti)=>[polys1[ti]]);
+        const pl0=placeOneSail(activeSails[0].s,prevPolys1,[fp1]);
+        if(!pl0) continue;
+        const combo=p1.score+pl0.score;
+        if(combo>bestComboScore){ bestComboScore=combo;
+          bestCombo=[{cx:pl0.cx,cz:pl0.cz,rot:pl0.rot,slope:pl0.slope},{cx:p1.cx,cz:p1.cz,rot:p1.rot,slope:p1.slope}]; }
+      }
+      if(bestCombo) cands.push({ ok:true, total:bestComboScore, placements:bestCombo });
+    }
+    return cands;
+  }
 
-  /* (2) Top-K-Diversifizierung (v5.8/5.9): vorwärts + rückwärts – nur bei 2 Segeln */
-  if(activeSails.length===2){
-    let bestCombo=null, bestComboScore=-1;
-    /* Vorwärts: K beste S1-Positionen × bestes S2 je S1 */
-    const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
-    for(const p0 of topK0){
-      const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
-      const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
-      const prevPolys0=sunDirs.map((_,ti)=>[polys0[ti]]);
-      const pl1=placeOneSail(activeSails[1].s,prevPolys0,[fp0]);
-      if(!pl1) continue;
-      const combo=p0.score+pl1.score;
-      if(combo>bestComboScore){ bestComboScore=combo;
-        bestCombo=[
-          {cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope,score:p0.score},
-          {cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope,score:pl1.score}
-        ]; }
+  /* ---- Modell 'kepler': analytischer Schwerpunkt-Seed (§ Plan 2).
+     Projektionsformel: ein Segel auf Hoehe H wirft seinen Mittelpunkt-Schatten auf
+     (cx - dir.x*H/dir.y, cz - dir.z*H/dir.y). Aufgeloest nach cx, damit der Schatten
+     zur Mittagszeit auf den Sitzflaechen-Schwerpunkt faellt. Bei 2 Segeln wird die
+     Sitzflaeche halbiert -> beide Segel decken sich ergaenzend (synergetisch). ---- */
+  function genKepler(){
+    const midDir=sunDirs[Math.floor(sunDirs.length/2)].dir;
+    function centroidOf(filter){ let sx=0,sz=0,n=0;
+      for(const c of cells){ if(filter&&!filter(c)) continue; sx+=c.x; sz+=c.z; n++; }
+      return n?{x:sx/n,z:sz/n}:{x:0,z:0}; }
+    function seedCenter(G){ return { cx:G.x+midDir.x*H_CTR/midDir.y, cz:G.z+midDir.z*H_CTR/midDir.y }; }
+    function bestAt(s,c0,prev){
+      let cx=c0.cx, cz=c0.cz;
+      for(let k=0;k<10;k++){ if(fits(cornersOf(s,cx,cz,0))||fits(cornersOf(s,cx,cz,90))) break; cx*=0.85; cz*=0.85; }
+      let best=null;
+      for(const rot of rotArr){ if(!fits(cornersOf(s,cx,cz,rot))) continue;
+        for(const slope of tiltArr){ const sc=scoreSailAt(s,cx,cz,rot,slope,prev);
+          if(!best||sc>best.score) best={cx,cz,rot,slope,score:sc}; } }
+      return best;
     }
-    /* Rückwärts: K beste S2-Positionen × bestes S1 je S2 */
-    const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
-    for(const p1 of topK1){
-      const polys1=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,dir));
-      const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
-      const prevPolys1=sunDirs.map((_,ti)=>[polys1[ti]]);
-      const pl0=placeOneSail(activeSails[0].s,prevPolys1,[fp1]);
-      if(!pl0) continue;
-      const combo=p1.score+pl0.score;
-      if(combo>bestComboScore){ bestComboScore=combo;
-        bestCombo=[
-          {cx:pl0.cx,cz:pl0.cz,rot:pl0.rot,slope:pl0.slope,score:pl0.score},
-          {cx:p1.cx,cz:p1.cz,rot:p1.rot,slope:p1.slope,score:p1.score}
-        ]; }
+    let minx=Infinity,maxx=-Infinity,minz=Infinity,maxz=-Infinity;
+    for(const c of cells){ if(c.x<minx)minx=c.x; if(c.x>maxx)maxx=c.x; if(c.z<minz)minz=c.z; if(c.z>maxz)maxz=c.z; }
+    const cands=[];
+    if(activeSails.length===1){
+      const pl=bestAt(activeSails[0].s, seedCenter(centroidOf(null)), null);
+      if(pl) cands.push({ok:true,placements:[pl]});
+    } else if(activeSails.length===2){
+      const splitX=(maxx-minx)>=(maxz-minz);
+      const midx=(minx+maxx)/2, midz=(minz+maxz)/2;
+      const halfA = splitX ? (c=>c.x<=midx) : (c=>c.z<=midz);
+      const halfB = splitX ? (c=>c.x> midx) : (c=>c.z> midz);
+      for(const [fa,fb] of [[halfA,halfB],[halfB,halfA]]){
+        const p0=bestAt(activeSails[0].s, seedCenter(centroidOf(fa)), null);
+        if(!p0) continue;
+        const prev=sunDirs.map(({dir})=>[groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir)]);
+        const p1=bestAt(activeSails[1].s, seedCenter(centroidOf(fb)), prev);
+        if(!p1) continue;
+        cands.push({ok:true,placements:[p0,p1]});
+      }
     }
-    if(bestCombo){ candidates.push({ ok:true, total:bestComboScore,
-      placements:[
-        {cx:bestCombo[0].cx,cz:bestCombo[0].cz,rot:bestCombo[0].rot,slope:bestCombo[0].slope,score:bestCombo[0].score},
-        {cx:bestCombo[1].cx,cz:bestCombo[1].cz,rot:bestCombo[1].rot,slope:bestCombo[1].slope,score:bestCombo[1].score}
-      ]}); }
+    return cands;
+  }
+
+  /* ---- Modell 'gauss': gemeinsamer (Block-)Koordinatenabstieg auf jointScore.
+     Variiert beide Segel inkl. GEMEINSAMER Verschiebungen -> behebt das sequentielle
+     Greedy-Problem (Synergie). Coarse-to-Fine, Start = bester Seed. ---- */
+  function gaussRefine(seed){
+    let P=clonePlacements(seed).map(clampVar);
+    let cur=jointScore(P);
+    if(cur===-Infinity) return null;
+    for(const [ds,dr,dsl] of [[0.6,12,0.12],[0.3,6,0.06],[0.15,4,0.03],[0.07,2,0.015]]){
+      let improved=true, guard=0;
+      while(improved && guard++<25){ improved=false;
+        for(let i=0;i<P.length;i++){
+          const moves=[['cx',ds],['cx',-ds],['cz',ds],['cz',-ds],['rot',dr],['rot',-dr],['slope',dsl],['slope',-dsl]];
+          for(const [key,delta] of moves){ const old=P[i][key]; P[i][key]=old+delta; clampVar(P[i]);
+            const v=jointScore(P); if(v>cur+1e-6){ cur=v; improved=true; } else { P[i][key]=old; } } }
+        if(P.length===2){
+          for(const [jx,jz] of [[ds,0],[-ds,0],[0,ds],[0,-ds]]){
+            const bak=P.map(p=>({cx:p.cx,cz:p.cz}));
+            P.forEach(p=>{ p.cx+=jx; p.cz+=jz; clampVar(p); });
+            const v=jointScore(P); if(v>cur+1e-6){ cur=v; improved=true; }
+            else P.forEach((p,ii)=>{ p.cx=bak[ii].cx; p.cz=bak[ii].cz; }); }
+        }
+      }
+    }
+    return P;
+  }
+
+  /* ---- Zufalls-/Vektor-Helfer fuer die globalen Modelle ---- */
+  function randIn(a,b){ return a+Math.random()*(b-a); }
+  function randPlacement(){ const P=[];
+    for(let i=0;i<activeSails.length;i++) P.push({cx:randIn(CXMIN,CXMAX),cz:randIn(CZMIN,CZMAX),rot:randIn(0,180),slope:randIn(SLOPE_MIN,SLOPE_MAX)});
+    return P; }
+  function flat(P){ const v=[]; for(const p of P) v.push(p.cx,p.cz,p.rot,p.slope); return v; }
+  function unflat(v){ const P=[]; for(let i=0;i<activeSails.length;i++){ const o=i*4;
+    P.push(clampVar({cx:v[o],cz:v[o+1],rot:v[o+2],slope:v[o+3]})); } return P; }
+
+  /* ---- Modell 'darwin': Differential Evolution auf jointScore (globale Suche). ---- */
+  function genDarwin(seeds){
+    const D=activeSails.length*4, NP=Math.max(12,Math.min(24,D*4)), GEN=22, F=0.7, CR=0.9;
+    const pop=[], fit=[];
+    for(const s of seeds){ if(pop.length>=Math.floor(NP/2)) break; pop.push(flat(clonePlacements(s).map(clampVar))); }
+    while(pop.length<NP) pop.push(flat(randPlacement()));
+    for(const ind of pop) fit.push(jointScore(unflat(ind)));
+    for(let g=0;g<GEN;g++){
+      for(let i=0;i<NP;i++){
+        let a,b,c; do{a=(Math.random()*NP)|0;}while(a===i); do{b=(Math.random()*NP)|0;}while(b===i||b===a); do{c=(Math.random()*NP)|0;}while(c===i||c===a||c===b);
+        const trial=pop[i].slice(), R=(Math.random()*D)|0;
+        for(let j=0;j<D;j++){ if(Math.random()<CR||j===R) trial[j]=pop[a][j]+F*(pop[b][j]-pop[c][j]); }
+        const f=jointScore(unflat(trial));
+        if(f>=fit[i]){ pop[i]=trial; fit[i]=f; }
+      }
+    }
+    const order=pop.map((_,i)=>i).sort((x,y)=>fit[y]-fit[x]);
+    const out=[];
+    for(let k=0;k<Math.min(2,order.length);k++){ if(fit[order[k]]>-Infinity) out.push({ok:true,placements:unflat(pop[order[k]])}); }
+    return out;
+  }
+
+  /* ---- Modell 'boltzmann': Simulated Annealing auf jointScore, mit Neustarts. ---- */
+  function genBoltzmann(seed){
+    const out=[], spanX=(CXMAX-CXMIN), spanZ=(CZMAX-CZMIN);
+    for(let r=0;r<2;r++){
+      let cur = r===0 ? clonePlacements(seed).map(clampVar) : randPlacement();
+      let curF=jointScore(cur);
+      if(curF===-Infinity){ cur=randPlacement(); curF=jointScore(cur); }
+      let best=clonePlacements(cur), bestF=curF;
+      let T=Math.max(5, Math.abs(curF)*0.15+5);
+      const ITERS=260;
+      for(let it=0;it<ITERS;it++){
+        const scale=0.05+0.45*(1-it/ITERS);
+        const cand=clonePlacements(cur), i=(Math.random()*cand.length)|0;
+        cand[i].cx+=(Math.random()*2-1)*spanX*0.25*scale;
+        cand[i].cz+=(Math.random()*2-1)*spanZ*0.25*scale;
+        cand[i].rot+=(Math.random()*2-1)*40*scale;
+        cand[i].slope+=(Math.random()*2-1)*0.15*scale;
+        clampVar(cand[i]);
+        const f=jointScore(cand);
+        if(f>=curF || (f>-Infinity && Math.random()<Math.exp((f-curF)/T))){ cur=cand; curF=f;
+          if(f>bestF){ best=clonePlacements(cand); bestF=f; } }
+        T*=0.985;
+      }
+      if(bestF>-Infinity) out.push({ok:true,placements:best});
+    }
+    return out;
+  }
+
+  /* ---- Dispatch: Greedy IMMER als Baseline, dann modellspezifische Kandidaten ---- */
+  let candidates = genGreedy();
+  if(MODEL!=='greedy-v6'){
+    candidates = candidates.concat(genKepler());
+    const seeds = candidates.filter(c=>c.placements&&c.placements.every(p=>p)).map(c=>clonePlacements(c.placements));
+    if(!seeds.length) seeds.push(randPlacement());
+    let bestSeed=seeds[0], bestSeedF=jointScore(bestSeed);
+    for(const s of seeds){ const f=jointScore(s); if(f>bestSeedF){ bestSeedF=f; bestSeed=s; } }
+    if(MODEL==='gauss'){ const g=gaussRefine(bestSeed); if(g) candidates.push({ok:true,placements:g}); }
+    else if(MODEL==='darwin'){ candidates = candidates.concat(genDarwin(seeds)); }
+    else if(MODEL==='boltzmann'){ candidates = candidates.concat(genBoltzmann(bestSeed)); }
+    /* 'kepler': bereits oben ergaenzt */
   }
 
   if(!candidates.length){
@@ -1554,25 +1762,40 @@ function _runSailOptimizer(){
         if(!roundImproved) break;
       }
     })();
-    return kpiNow();
+    /* Echte KPI + Sekundaerkriterien (Ueberlappung, max. Pfostenhoehe) zurueckgeben */
+    const rr=computeDayShade();
+    let maxH=0; for(const as of activeSails){ for(const pi of S.sails[as.si].posts){ if(S.points[pi]&&S.points[pi].h>maxH) maxH=S.points[pi].h; } }
+    return { kpi: useRect? rr.total_rect_m2h : rr.total_m2h,
+             overlap: useRect? rr.overlap_rect_m2h : rr.overlap_m2h, maxH };
   }
 
-  /* ---- Alle Kandidaten binden+polieren, das nach echter KPI BESTE Ergebnis merken ---- */
-  let best={kpi:-Infinity, points:null, sails:null};
+  /* ---- Alle Kandidaten binden+polieren, das nach echter KPI BESTE Ergebnis merken.
+     ε-Toleranz: liegt ein Kandidat innerhalb ±EPS m²·h, entscheiden Sekundaerkriterien
+     (1. weniger Ueberlappung = weniger Verschwendung, 2. niedrigere max. Pfostenhoehe). ---- */
+  function candBetter(a,b){
+    if(a.kpi > b.kpi + EPS) return true;
+    if(b.kpi > a.kpi + EPS) return false;
+    if(Math.abs(a.overlap-b.overlap) > 1e-6) return a.overlap < b.overlap;
+    return a.maxH < b.maxH;
+  }
+  let best=null;
   for(const cand of candidates){
-    const k=bindAndPolish(cand.placements);
-    if(k>best.kpi){ best={ kpi:k,
+    const r=bindAndPolish(cand.placements);
+    const snap={ kpi:r.kpi, overlap:r.overlap, maxH:r.maxH,
       points:JSON.parse(JSON.stringify(S.points)),
-      sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) }; }
+      sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) };
+    if(best===null || candBetter(snap,best)) best=snap;
   }
   /* Bestes Ergebnis in den State zurueckschreiben */
   S.points=JSON.parse(JSON.stringify(best.points));
   best.sails.forEach((sv,i)=>{ S.sails[i].posts=[...sv.posts]; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
 
-  /* ---- Regressions-Schutz: echte KPI vergleichen, nur bei Verbesserung uebernehmen ---- */
+  /* ---- Regressions-Schutz mit ε: neues Layout nur bei SIGNIFIKANTER Verbesserung
+     (after > before + EPS). Innerhalb der Toleranz gilt es als gleich -> Altzustand
+     behalten (kein Layout-Wechsel ohne echten Mehrwert). ---- */
   const afterKPI=best.kpi;
   let key='opt-improved';
-  if(afterKPI<=beforeKPI){
+  if(!(afterKPI > beforeKPI + EPS)){
     S.points=beforeSnap.points;
     beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
     key='opt-reverted';
@@ -1723,6 +1946,8 @@ function wireStaticUI(){
   const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
   const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
   const chkFP=$('chkFreePosts'); if(chkFP){ chkFP.checked=S.optimizer_freePosts; chkFP.onchange=()=>{ S.optimizer_freePosts=chkFP.checked; touch(); }; }
+  const selOM=$('selOptModel'); if(selOM){ selOM.value=S.optimizerModel; selOM.onchange=()=>{ S.optimizerModel=selOM.value; touch(); }; }
+  const numOT=$('numOptTol'); if(numOT){ numOT.value=S.optimizerTolerance; numOT.onchange=()=>{ const v=parseFloat(String(numOT.value).replace(',','.')); S.optimizerTolerance=(isNaN(v)||v<0)?0:v; numOT.value=S.optimizerTolerance; touch(); }; }
   const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
   wireEvalRectInputs();
   /* Zeitfenster-Inputs */
